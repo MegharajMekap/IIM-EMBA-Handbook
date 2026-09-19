@@ -1995,6 +1995,7 @@ function renderCalendar(){
 /* ── tabs ── */
 const PANELS = ["recordings", "notes", "calendar"];
 let noticeModalOpen = false; // blocks tab keys/swipes and page scroll while the notice modal is up
+const seenTabs = new Set();
 function setTab(name, userAction){
   if(PANELS.indexOf(name) === -1) name = "recordings";
   PANELS.forEach(p => {
@@ -2002,6 +2003,11 @@ function setTab(name, userAction){
     document.getElementById("tabBtn-" + p).setAttribute("aria-selected", p === name);
   });
   document.body.setAttribute("data-activetab", name);
+  if(!seenTabs.has(name)){
+    seenTabs.add(name);
+    const count = document.getElementById("cnt-" + name);
+    if(count) count.remove();
+  }
   tally.style.display = name === "recordings" ? "" : "none";
   const hash = name === "recordings" ? "" : "#" + name;
   if(location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
