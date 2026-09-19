@@ -128,6 +128,18 @@
     0%,100%{opacity:1}
     50%{opacity:.45}
   }
+  .visitorPill{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:13px;color:var(--mute);
+    font-variant-numeric:tabular-nums;
+    margin-bottom:22px;
+  }
+  .visitorPill .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:#1E8A4C;flex:none;
+    animation:livePulse 1.8s ease-in-out infinite;
+  }
+  .visitorPill .sep{color:var(--line)}
   h1{
     font-family:var(--serif);
     font-weight:700;
@@ -1254,6 +1266,12 @@
     <div class="termrow">
       <div class="term" id="termLabel">Batch 2026 · Term 1 Phase 2 <span class="live">in progress</span></div>
       <div class="clock" id="liveClock"></div>
+      <div class="visitorPill" id="visitorPill" hidden>
+        <span class="dot" aria-hidden="true"></span>
+        <span id="visitorOnline"></span>
+        <span class="sep">·</span>
+        <span id="visitorTotal"></span>
+      </div>
     </div>
     <h1><span id="h1Text"></span><span id="h1Caret" class="typecaret done"></span></h1>
     <p class="standfirst" id="standfirst"><span id="greetLine" class="greetline"><span id="greetText"></span><span id="greetCaret" class="typecaret done"></span></span><span id="festivalLine" class="festivalline" hidden><span id="festivalText"></span><span id="festivalCaret" class="typecaret done"></span></span><span id="restLine"></span><span id="standfirstCaret" class="typecaret done"></span></p>
@@ -1323,7 +1341,55 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script>
+/* ── live visitor count + total visits (Firebase Realtime Database) ──
+   Each open tab registers a presence entry that's auto-removed by
+   Firebase on disconnect (tab close, network drop, etc.), so the
+   "online" count always reflects currently-connected tabs without
+   needing a heartbeat or manual cleanup. Total visits is a simple
+   counter bumped once per page load. ── */
+(function(){
+  if(typeof firebase === "undefined") return;
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKdMASnmqGb5A9R0aa4rf4fCSqiWJ3RgU",
+    authDomain: "iim-emba-handbook.firebaseapp.com",
+    databaseURL: "https://iim-emba-handbook-default-rtdb.firebaseio.com",
+    projectId: "iim-emba-handbook",
+    storageBucket: "iim-emba-handbook.firebasestorage.app",
+    messagingSenderId: "1049773941554",
+    appId: "1:1049773941554:web:518bd39a7305de6571ad2b"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const pill = document.getElementById("visitorPill");
+  const onlineEl = document.getElementById("visitorOnline");
+  const totalEl = document.getElementById("visitorTotal");
+  if(!pill) return;
+
+  const presenceRef = db.ref("presence").push();
+  db.ref(".info/connected").on("value", snap => {
+    if(snap.val() !== true) return;
+    presenceRef.onDisconnect().remove();
+    presenceRef.set(true);
+  });
+
+  db.ref("presence").on("value", snap => {
+    const n = snap.numChildren();
+    onlineEl.textContent = n + (n === 1 ? " person online" : " people online");
+    pill.hidden = false;
+  });
+
+  const totalRef = db.ref("totalVisits");
+  totalRef.transaction(current => (current || 0) + 1);
+  totalRef.on("value", snap => {
+    const v = snap.val();
+    if(v != null) totalEl.textContent = v + " visits";
+  });
+})();
+
 /* IP acknowledgment gate — shown on every page load, not just once */
 (function(){
   const overlay = document.getElementById("ackOverlay");
