@@ -1594,6 +1594,11 @@ const SUBJECTS = {
 const FALLBACK = { code:"—", color:"#5D6892" };
 const sub = n => SUBJECTS[n] || FALLBACK;
 const isPending = r => !r.url || r.url.indexOf("PASTE_LINK_HERE") > -1;
+/* A Zoom *join* link (zoom.us/j/...) is the live "join the class" URL,
+   pasted in ahead of time — it is not a recorded video. Thumbnails
+   should only appear once the field is hardcoded with the actual
+   recorded URL, not just any url. */
+const hasRecordedUrl = r => !isPending(r) && !/zoom\.us\/j\//i.test(r.url);
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -1665,10 +1670,11 @@ function ghostSize(code){
 
 function thumb(r, eager){
   const s = sub(r.subject);
-  const inner = r.thumb
+  const showThumb = r.thumb && hasRecordedUrl(r);
+  const inner = showThumb
     ? '<img src="' + esc(r.thumb) + '" alt=""' + (eager ? "" : ' loading="lazy" decoding="async"') + '>'
     : '<div class="grain"></div><div class="ghost" style="font-size:' + ghostSize(s.code) + '">' + esc(s.code) + '</div>';
-  const bg = r.thumb ? "" : "background:linear-gradient(148deg," + shade(s.color,26) + "," + shade(s.color,-30) + ");";
+  const bg = showThumb ? "" : "background:linear-gradient(148deg," + shade(s.color,26) + "," + shade(s.color,-30) + ");";
   const playable = !r.campus && !isPending(r) && r.url;
   const tag = playable ? "a" : "span";
   const attrs = playable ? ' href="' + esc(r.url) + '" target="_blank" rel="noopener"' : "";
