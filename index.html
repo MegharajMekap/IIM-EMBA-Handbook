@@ -388,47 +388,6 @@
     .tabcount{min-width:16px;height:16px;font-size:10px}
   }
 
-  /* ---------- featured ---------- */
-  .featured{
-    position:relative;
-    margin:28px 0 6px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:14px;
-    overflow:hidden;
-    box-shadow:0 1px 2px rgba(22,35,58,.06),0 14px 32px -8px rgba(22,35,58,.16);
-    display:grid;
-    grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);
-    transition:box-shadow .25s ease;
-  }
-  .featured::before{
-    content:"";position:absolute;inset:0 0 auto 0;height:3px;
-    background:linear-gradient(90deg,var(--navy),#4E86D8 60%,transparent);
-  }
-  .featured:hover{box-shadow:0 1px 2px rgba(22,35,58,.06),0 18px 40px -8px rgba(22,35,58,.22)}
-  .featured .thumb{border-radius:0;height:100%;min-height:234px}
-  .featured .fbody{padding:30px 34px;display:flex;flex-direction:column;justify-content:center}
-  .flabel{
-    display:inline-flex;align-items:center;gap:7px;
-    font-size:12px;font-weight:700;
-    text-transform:uppercase;letter-spacing:.06em;
-    color:var(--navy);
-    margin-bottom:13px;
-  }
-  .flabel::before{
-    content:"";width:6px;height:6px;border-radius:50%;
-    background:var(--navy);flex:none;
-    box-shadow:0 0 0 3px var(--navy-tint);
-  }
-  .featured h2{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:clamp(1.35rem,2.7vw,1.82rem);
-    line-height:1.18;
-    letter-spacing:-.012em;
-    margin:0 0 11px;
-  }
-
   /* ---------- date groups ---------- */
   .group{
     display:grid;
@@ -493,7 +452,6 @@
     font-size:2.6rem;letter-spacing:-.03em;
     color:rgba(255,255,255,.62);
   }
-  .featured .thumb .ghost{font-size:4.4rem}
   .thumb .grain{
     position:absolute;inset:0;
     background-image:repeating-linear-gradient(118deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px);
@@ -541,7 +499,6 @@
   }
   .open:hover{background:var(--navy-deep);transform:translateY(-1px);box-shadow:0 6px 14px -4px rgba(18,53,104,.45)}
   .open svg{width:12px;height:12px;fill:currentColor}
-  .featured .open{padding:12px 22px;font-size:15px}
   .open-fresh{animation:openFreshGlow 1.6s ease-out 2}
   @keyframes openFreshGlow{
     0%{box-shadow:0 0 0 0 rgba(27,75,143,.5)}
@@ -778,11 +735,6 @@
   }
 
   /* ---------- responsive ---------- */
-  @media (max-width:860px){
-    .featured{grid-template-columns:1fr}
-    .featured .thumb{aspect-ratio:16/9;min-height:0}
-    .featured .fbody{padding:24px}
-  }
   @media (max-width:700px){
     .wrap{padding:0 17px 72px}
     .masthead{padding:40px 0 0}
@@ -1764,17 +1716,6 @@ function card(r){
     '</div></article>';
 }
 
-function featured(r){
-  const s = sub(r.subject);
-  return '<section class="featured" id="' + recId(r) + '">' + thumb(r, true) +
-    '<div class="fbody">' +
-      '<div class="flabel">Most recent class</div>' +
-      '<h2>' + esc(r.lecture) + '</h2>' +
-      '<p class="meta" style="margin-bottom:20px"><span style="color:' + s.color + ';font-weight:600">' + esc(r.subject) + '</span> · ' + longDate(r.date) + ' · ' + slot(r) + (r.faculty ? '<br>' + esc(r.faculty) : "") + '</p>' +
-      '<div class="actions" style="padding:0">' + actions(r) + '</div>' +
-    '</div></section>';
-}
-
 const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const d0 = s => new Date(s + "T00:00:00");
@@ -1867,13 +1808,7 @@ function render(){
 
   const held = list.filter(r => endStamp(r) <= Date.now());
 
-  let html = "";
-  let rest = held;
-  if(!filtering && held.length){
-    html += featured(held[0]);
-    rest = held.slice(1);
-  }
-  html += group(rest);
+  let html = group(held);
   if(!held.length) html += '<div class="empty"><h3>No classes held yet</h3><p>Sessions will appear here once the first class is recorded.</p></div>';
   out.innerHTML = html;
   renderNotes();
