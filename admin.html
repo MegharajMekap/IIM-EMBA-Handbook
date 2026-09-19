@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Class Recordings and Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#F6F7FA; --card:#FFFFFF; --line:#E2E6EE; --line-soft:#EDF0F5;
+    --ink:#16233A; --ink-soft:#3A4761; --mute:#6B778F;
+    --navy:#1B4B8F; --navy-deep:#123568; --navy-tint:#EEF3FA;
+    --serif:"Source Serif 4",Georgia,serif;
+    --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:var(--serif);font-weight:700;font-size:1.9rem;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--mute);font-size:13.5px;margin:0 0 28px}
+  a{color:var(--navy)}
+
+  /* ---------- login ---------- */
+  .loginBox{
+    max-width:380px;margin:80px auto;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:32px;box-shadow:0 1px 2px rgba(22,35,58,.05),0 12px 28px -8px rgba(22,35,58,.14);
+  }
+  .loginBox h2{font-family:var(--serif);font-size:1.35rem;margin:0 0 6px}
+  .loginBox p{color:var(--mute);font-size:13.5px;margin:0 0 22px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+  .field input{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+    font:inherit;font-size:14.5px;background:var(--page);
+  }
+  .field input:focus{outline:2px solid var(--navy);outline-offset:1px;border-color:transparent}
+  .loginGo{
+    width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;
+    padding:11px;font-size:14.5px;font-weight:600;cursor:pointer;margin-top:4px;
+    transition:background .18s ease;
+  }
+  .loginGo:hover{background:var(--navy-deep)}
+  .loginGo:disabled{opacity:.6;cursor:default}
+  .loginErr{color:#B3261E;font-size:13px;margin-top:12px;display:none}
+  .loginErr.show{display:block}
+
+  /* ---------- dashboard ---------- */
+  #dash{display:none}
+  #dash.show{display:block}
+  .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+  .signout{
+    background:none;border:1px solid var(--line);border-radius:7px;padding:8px 14px;
+    font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+  }
+  .signout:hover{border-color:#C6D0E0;background:var(--card)}
+
+  .statRow{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:32px}
+  .stat{
+    flex:1;min-width:140px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;box-shadow:0 1px 2px rgba(22,35,58,.04);
+  }
+  .stat .n{font-family:var(--serif);font-weight:700;font-size:1.8rem;color:var(--navy);line-height:1.1}
+  .stat .l{font-size:12.5px;color:var(--mute);margin-top:4px}
+
+  .section{margin-bottom:40px}
+  .section h2{font-family:var(--serif);font-weight:600;font-size:1.25rem;margin:0 0 4px}
+  .sectionNote{color:var(--mute);font-size:12.5px;margin:0 0 14px}
+
+  .tableWrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
+  th{
+    text-align:left;padding:10px 12px;background:var(--navy-tint);color:var(--navy);
+    font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;
+    border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;
+  }
+  td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-soft)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--navy-tint)}
+  .tag{
+    display:inline-block;background:var(--navy-tint);color:var(--navy);border-radius:5px;
+    padding:1px 7px;font-size:11px;font-weight:600;margin:1px 3px 1px 0;
+  }
+  .tag.new{background:#E8F5EC;color:#1E8A4C}
+  .muted{color:var(--mute)}
+  .empty{padding:28px;text-align:center;color:var(--mute);font-size:13.5px}
+  .loadMore{
+    display:block;width:100%;background:var(--page);border:none;border-top:1px solid var(--line);
+    padding:12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;
+  }
+  .loadMore:hover{background:var(--navy-tint)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loginWrap">
+    <div class="loginBox">
+      <h2>Admin sign-in</h2>
+      <p>Site traffic, device, and engagement data — visible only to the site maintainer.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="loginGo" id="loginBtn">Sign in</button>
+        <div class="loginErr" id="loginErr"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dash">
+    <div class="topbar">
+      <div>
+        <h1>Admin dashboard</h1>
+        <p class="sub">Class Recordings and Notes · site analytics</p>
+      </div>
+      <button class="signout" id="signOutBtn">Sign out</button>
+    </div>
+
+    <div class="statRow">
+      <div class="stat"><div class="n" id="statOnline">–</div><div class="l">Online right now</div></div>
+      <div class="stat"><div class="n" id="statTotal">–</div><div class="l">Total visits (all time)</div></div>
+      <div class="stat"><div class="n" id="statLogged">–</div><div class="l">Visit log entries loaded</div></div>
+      <div class="stat"><div class="n" id="statInstalls">–</div><div class="l">PWA installs logged</div></div>
+    </div>
+
+    <div class="section">
+      <h2>PWA installs</h2>
+      <p class="sectionNote">Most recent first.</p>
+      <div class="tableWrap">
+        <table>
+          <thead><tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr></thead>
+          <tbody id="installsBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Visitor log</h2>
+      <p class="sectionNote">Most recent first · 100 at a time.</p>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th><th>Location</th><th>ISP</th><th>Device</th><th>Return visit</th>
+              <th>Duration</th><th>Tabs</th><th>Search</th><th>Subjects</th>
+              <th>Recordings opened</th><th>Notes opened</th><th>Load time</th>
+            </tr>
+          </thead>
+          <tbody id="visitsBody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
+        </table>
+        <button class="loadMore" id="loadMoreBtn" hidden>Load 100 more</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAKdMASnmqGb5A9R0aa4rf4fCSqiWJ3RgU",
+  authDomain: "iim-emba-handbook.firebaseapp.com",
+  databaseURL: "https://iim-emba-handbook-default-rtdb.firebaseio.com",
+  projectId: "iim-emba-handbook",
+  storageBucket: "iim-emba-handbook.firebasestorage.app",
+  messagingSenderId: "1049773941554",
+  appId: "1:1049773941554:web:518bd39a7305de6571ad2b"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtTime = ts => ts ? new Date(ts).toLocaleString(undefined, { dateStyle:"medium", timeStyle:"short" }) : "–";
+const tagList = (arr, cls) => (arr && arr.length) ? arr.map(v => '<span class="tag' + (cls ? " " + cls : "") + '">' + esc(v) + '</span>').join("") : '<span class="muted">–</span>';
+
+/* ---------- auth ---------- */
+const loginWrap = document.getElementById("loginWrap");
+const dash = document.getElementById("dash");
+const loginForm = document.getElementById("loginForm");
+const loginBtn = document.getElementById("loginBtn");
+const loginErr = document.getElementById("loginErr");
+
+loginForm.addEventListener("submit", function(e){
+  e.preventDefault();
+  loginErr.classList.remove("show");
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Signing in…";
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(function(err){
+      loginErr.textContent = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+        ? "Incorrect email or password."
+        : "Sign-in failed: " + err.message;
+      loginErr.classList.add("show");
+    })
+    .finally(function(){
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Sign in";
+    });
+});
+
+document.getElementById("signOutBtn").addEventListener("click", function(){
+  auth.signOut();
+});
+
+let dashboardStarted = false;
+auth.onAuthStateChanged(function(user){
+  if(user){
+    loginWrap.style.display = "none";
+    dash.classList.add("show");
+    if(!dashboardStarted){ dashboardStarted = true; startDashboard(); }
+  } else {
+    loginWrap.style.display = "";
+    dash.classList.remove("show");
+  }
+});
+
+/* ---------- dashboard data ---------- */
+function startDashboard(){
+  db.ref("presence").on("value", function(snap){
+    document.getElementById("statOnline").textContent = snap.numChildren();
+  });
+  db.ref("totalVisits").on("value", function(snap){
+    document.getElementById("statTotal").textContent = snap.val() != null ? snap.val() : "–";
+  });
+
+  db.ref("pwaInstalls").limitToLast(100).on("value", function(snap){
+    const rows = [];
+    snap.forEach(function(child){ rows.unshift(child.val()); });
+    document.getElementById("statInstalls").textContent = rows.length;
+    const body = document.getElementById("installsBody");
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="4" class="empty">No installs logged yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(r){
+      return "<tr><td>" + esc(fmtTime(r.ts)) + "</td><td>" + esc(r.kind) + "</td><td>" + esc(r.platform) + "</td><td class=\"muted\">" + esc(r.userAgent) + "</td></tr>";
+    }).join("");
+  });
+
+  let visitsQueryLimit = 100;
+  function loadVisits(){
+    db.ref("visitorLog").limitToLast(visitsQueryLimit).once("value").then(function(snap){
+      const rows = [];
+      snap.forEach(function(child){ rows.unshift(child.val()); });
+      document.getElementById("statLogged").textContent = rows.length;
+      const body = document.getElementById("visitsBody");
+      if(!rows.length){
+        body.innerHTML = '<tr><td colspan="12" class="empty">No visits logged yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map(function(r){
+        const loc = [r.city, r.region, r.country].filter(Boolean).join(", ") || '<span class="muted">–</span>';
+        const dev = r.device ? (r.device.type + " · " + (r.device.viewport || "?") + " · " + (r.device.language || "?") + (r.device.pwa ? " · PWA" : "")) : '<span class="muted">–</span>';
+        const ret = r.visit ? (r.visit.isReturning ? '<span class="tag">Returning (' + esc(r.visit.visitCount) + ")</span>" : '<span class="tag new">New</span>') : '<span class="muted">–</span>';
+        const dur = (typeof r.durationSec === "number") ? Math.round(r.durationSec / 6) / 10 + " min" : '<span class="muted">–</span>';
+        const load = (r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : '<span class="muted">–</span>';
+        return "<tr>" +
+          "<td>" + esc(fmtTime(r.ts)) + "</td>" +
+          "<td>" + loc + (r.ip ? '<br><span class="muted">' + esc(r.ip) + "</span>" : "") + "</td>" +
+          "<td class=\"muted\">" + esc(r.isp || "–") + "</td>" +
+          "<td>" + dev + "</td>" +
+          "<td>" + ret + "</td>" +
+          "<td>" + dur + "</td>" +
+          "<td>" + tagList(r.tabsVisited) + "</td>" +
+          "<td>" + (r.searchUsed ? '<span class="tag">Yes</span>' : '<span class="muted">No</span>') + "</td>" +
+          "<td>" + tagList(r.subjectFilters) + "</td>" +
+          "<td>" + tagList(r.recordingsOpened) + "</td>" +
+          "<td>" + tagList(r.notesOpened) + "</td>" +
+          "<td class=\"muted\">" + load + "</td>" +
+        "</tr>";
+      }).join("");
+    }).catch(function(err){
+      document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Failed to load: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+  loadVisits();
+  document.getElementById("loadMoreBtn").hidden = false;
+  document.getElementById("loadMoreBtn").addEventListener("click", function(){
+    visitsQueryLimit += 100;
+    loadVisits();
+  });
+}
+</script>
+</body>
+</html>
