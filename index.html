@@ -2443,16 +2443,30 @@ cntRecordings.textContent = sorted.filter(function(r){ return r.campus || hasRec
 cntNotes.textContent = NOTES.length;
 setTab(location.hash === "#notes" || location.hash === "#calendar" ? location.hash.slice(1) : "recordings");
 
-/* ── notice marquee — notices with an "expires" time drop out on their own ── */
+/* ── notice marquee — notices with an "expires" time drop out on their own ──
+   Combines the hardcoded NOTICES above with announcements added from
+   the admin dashboard (Firebase "announcements" node, public read). ── */
 (function(){
-  if(!NOTICES.length) return;
   const bar = document.getElementById("noticebar");
   const track = document.getElementById("noticeTrack");
   let shownKey = null;
+  let dynamicNotices = [];
+
+  if(typeof firebase !== "undefined" && firebase.apps && firebase.apps.length){
+    firebase.database().ref("announcements").on("value", function(snap){
+      const items = [];
+      snap.forEach(function(child){
+        const v = child.val();
+        items.push({ key: child.key, text: v.text, expires: v.expires || null, isNew: !!v.isNew });
+      });
+      dynamicNotices = items;
+      tick();
+    });
+  }
 
   function activeNotices(){
     const now = Date.now();
-    return NOTICES.filter(n => !n.expires || new Date(n.expires).getTime() > now);
+    return NOTICES.concat(dynamicNotices).filter(n => !n.expires || new Date(n.expires).getTime() > now);
   }
 
   function tick(){
@@ -2475,6 +2489,7 @@ setTab(location.hash === "#notes" || location.hash === "#calendar" ? location.ha
   function clearNewFlags(){
     if(!track.querySelector(".notice-newflag")) return;
     NOTICES.forEach(n => { n.isNew = false; });
+    dynamicNotices.forEach(n => { n.isNew = false; });
     [].forEach.call(track.querySelectorAll(".notice-newflag"), el => el.remove());
   }
 
