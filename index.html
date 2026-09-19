@@ -3383,24 +3383,12 @@ setTab(location.hash === "#notes" || location.hash === "#calendar" ? location.ha
      "installed" fires once, right when the browser confirms the install.
      iOS has no such event, so a standalone launch there is logged instead
      as the closest available signal that it was added to the home screen. */
-  var NTFY_TOPIC = "iim-emba-pwa-alerts-q7x2m9wz3k"; // obscure, unlisted ntfy.sh topic — subscribe to it to get push alerts
-  function notifyOwner(message){
-    try{
-      fetch("https://ntfy.sh/" + NTFY_TOPIC, {
-        method: "POST",
-        headers: { "Title": "PWA install", "Tags": "tada" },
-        body: message
-      }).catch(function(){});
-    }catch(e){}
-  }
   function logPwaEvent(kind){
-    var platform = isAndroid ? "android" : (isIOS ? "ios" : "other");
-    notifyOwner("New " + kind + " on " + platform);
     if(typeof firebase === "undefined" || !firebase.apps || !firebase.apps.length) return;
     try{
       firebase.database().ref("pwaInstalls").push({
         kind: kind,
-        platform: platform,
+        platform: isAndroid ? "android" : (isIOS ? "ios" : "other"),
         userAgent: ua,
         ts: firebase.database.ServerValue.TIMESTAMP
       }).catch(function(){});
