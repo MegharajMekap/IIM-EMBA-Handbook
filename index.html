@@ -1641,11 +1641,7 @@ const SUBJECTS = {
 };
 const FALLBACK = { code:"—", color:"#5D6892" };
 const sub = n => SUBJECTS[n] || FALLBACK;
-/* A Zoom *join* link (zoom.us/j/...), pasted ahead of time so the live
-   "Join Zoom" banner works, is not a finished recording — treat it as
-   pending until it's swapped for the actual recording link. */
-const isZoomJoinLink = url => /zoom\.us\/j\//i.test(url || "");
-const isPending = r => !r.url || r.url.indexOf("PASTE_LINK_HERE") > -1 || isZoomJoinLink(r.url);
+const isPending = r => !r.url || r.url.indexOf("PASTE_LINK_HERE") > -1;
 
 
 /* ══════════════════════════════════════════════════════════════
