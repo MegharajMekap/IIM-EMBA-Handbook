@@ -1775,8 +1775,7 @@ function render(){
     return;
   }
 
-  const today = new Date(); today.setHours(23,59,59,999);
-  const held = list.filter(r => d0(r.date) <= today);
+  const held = list.filter(r => endStamp(r) <= Date.now());
 
   let html = "";
   let rest = held;
