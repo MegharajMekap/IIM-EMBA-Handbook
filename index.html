@@ -1175,7 +1175,7 @@
       <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
       <span>Do not share, redistribute, or make this content accessible to any unauthorized person.</span>
     </div>
-    <p class="ackPrivacy">For site administration, each visit's IP address and approximate location (city/country) is logged and kept as a historical record — visible only to the site maintainer, never shown to other visitors.</p>
+    <p class="ackPrivacy">For site administration, each visit's IP address and approximate location (city/country) is logged and kept as a historical record — visible only to the site maintainer, never shown to other visitors. Installing this site to your home screen is logged the same way.</p>
     <button class="ackGo" id="ackGo">
       <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
       <span id="ackGoLabel">I Acknowledge &amp; Agree</span>
@@ -1376,8 +1376,8 @@
   const presenceRef = db.ref("presence").push();
   db.ref(".info/connected").on("value", snap => {
     if(snap.val() !== true) return;
-    presenceRef.onDisconnect().remove();
-    presenceRef.set(true);
+    presenceRef.onDisconnect().remove().catch(() => {});
+    presenceRef.set(true).catch(() => {});
   });
 
   db.ref("presence").on("value", snap => {
@@ -1387,7 +1387,7 @@
   });
 
   const totalRef = db.ref("totalVisits");
-  totalRef.transaction(current => (current || 0) + 1);
+  totalRef.transaction(current => (current || 0) + 1).catch(() => {});
   totalRef.on("value", snap => {
     const v = snap.val();
     if(v != null) totalEl.textContent = v + " visits";
@@ -1409,7 +1409,7 @@
         page: location.pathname + location.hash,
         userAgent: navigator.userAgent,
         ts: firebase.database.ServerValue.TIMESTAMP
-      });
+      }).catch(() => {});
     })
     .catch(() => {});
 })();
@@ -3373,12 +3373,31 @@ setTab(location.hash === "#notes" || location.hash === "#calendar" ? location.ha
   var close = document.getElementById("ibClose");
   var KEY = "recordingsInstallDismissed";
 
-  if(sessionStorage.getItem(KEY)) return;
-
   var ua = navigator.userAgent || "";
   var isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
   var isAndroid = /Android/.test(ua);
   var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+  /* PWA install log, for the site owner only (same pattern as visitorLog:
+     write-only from the public site, readable via the Firebase console).
+     "installed" fires once, right when the browser confirms the install.
+     iOS has no such event, so a standalone launch there is logged instead
+     as the closest available signal that it was added to the home screen. */
+  function logPwaEvent(kind){
+    if(typeof firebase === "undefined" || !firebase.apps || !firebase.apps.length) return;
+    try{
+      firebase.database().ref("pwaInstalls").push({
+        kind: kind,
+        platform: isAndroid ? "android" : (isIOS ? "ios" : "other"),
+        userAgent: ua,
+        ts: firebase.database.ServerValue.TIMESTAMP
+      }).catch(function(){});
+    }catch(e){}
+  }
+  window.addEventListener("appinstalled", function(){ logPwaEvent("installed"); });
+  if(isStandalone) logPwaEvent("launched-standalone");
+
+  if(sessionStorage.getItem(KEY)) return;
   if(isStandalone) return; // already installed, opened from the home screen icon
 
   var deferredPrompt = null;
