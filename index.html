@@ -1939,11 +1939,11 @@ function calMonthGrid(year, month, items, todayFlag, pastItems){
   for(let day=1; day<=daysInMonth; day++){
     const isToday = new Date(year, month, day).getTime() === today.getTime();
     const dayItems = (byDay.get(day) || []).slice().sort((a,b) => stamp(a) - stamp(b));
-    const doneItems = dayItems.length ? [] : (byDayPast.get(day) || []).slice().sort((a,b) => stamp(a) - stamp(b));
+    const doneItems = (byDayPast.get(day) || []).slice().sort((a,b) => stamp(a) - stamp(b));
     cells += '<div class="calCell" style="animation-delay:' + Math.min(day * 10, 220) + 'ms">' +
       '<span class="calDayNum' + (isToday ? ' calToday' : '') + '">' + day + '</span>' +
       (isToday && todayFlag ? '<span class="calTodayFlag">' + todayFlag + '</span>' : '') +
-      '<div class="calChips">' + dayItems.map(calChip).join("") + doneItems.map(calChipDone).join("") + '</div>' +
+      '<div class="calChips">' + doneItems.map(calChipDone).join("") + dayItems.map(calChip).join("") + '</div>' +
     '</div>';
   }
   const trailing = (7 - ((startDow + daysInMonth) % 7)) % 7;
