@@ -1001,6 +1001,9 @@
     margin:0 0 14px;color:var(--ink-soft);font-size:14.5px;line-height:1.6;
   }
   .ackBox strong{color:var(--ink)}
+  .ackBox p.ackPrivacy{
+    margin:0 0 18px;color:var(--mute);font-size:12.5px;line-height:1.55;
+  }
   .ackWarn{
     display:flex;gap:10px;align-items:flex-start;
     background:#FDF3EC;border:1px solid #F3DCC7;border-radius:9px;
@@ -1172,6 +1175,7 @@
       <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
       <span>Do not share, redistribute, or make this content accessible to any unauthorized person.</span>
     </div>
+    <p class="ackPrivacy">For site administration, each visit's IP address and approximate location (city/country) is logged and visible only to the site maintainer — not shown to other visitors.</p>
     <button class="ackGo" id="ackGo">
       <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
       <span id="ackGoLabel">I Acknowledge &amp; Agree</span>
@@ -1388,6 +1392,26 @@
     const v = snap.val();
     if(v != null) totalEl.textContent = v + " visits";
   });
+
+  /* Write-only visitor log: IP + coarse location per visit, for the
+     site owner only (readable via the Firebase console — the public
+     page never reads this back, so other visitors never see it). */
+  fetch("https://ipwho.is/")
+    .then(r => r.json())
+    .then(info => {
+      if(!info || info.success === false) return;
+      db.ref("visitorLog").push({
+        ip: info.ip || null,
+        city: info.city || null,
+        region: info.region || null,
+        country: info.country || null,
+        isp: (info.connection && info.connection.isp) || null,
+        page: location.pathname + location.hash,
+        userAgent: navigator.userAgent,
+        ts: firebase.database.ServerValue.TIMESTAMP
+      });
+    })
+    .catch(() => {});
 })();
 
 /* IP acknowledgment gate — shown on every page load, not just once */
