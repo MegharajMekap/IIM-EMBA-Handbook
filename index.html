@@ -1129,7 +1129,7 @@
       <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
       <span>Do not share, redistribute, or make this content accessible to any unauthorized person.</span>
     </div>
-    <p class="ackPrivacy">For site administration, each visit's IP address and approximate location (city/country) is logged and kept as a historical record — visible only to the site maintainer, never shown to other visitors. Installing this site to your home screen is logged the same way.</p>
+    <p class="ackPrivacy">For site administration, each visit is logged as a historical record — IP address and approximate location, device/browser type, and how the site is used (tabs opened, search, recordings/notes opened, time spent). Visible only to the site maintainer, never shown to other visitors. Installing this site to your home screen is logged the same way.</p>
     <button class="ackGo" id="ackGo">
       <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
       <span id="ackGoLabel">I Acknowledge &amp; Agree</span>
@@ -1325,47 +1325,169 @@
   const pill = document.getElementById("visitorPill");
   const onlineEl = document.getElementById("visitorOnline");
   const totalEl = document.getElementById("visitorTotal");
-  if(!pill) return;
 
-  const presenceRef = db.ref("presence").push();
-  db.ref(".info/connected").on("value", snap => {
-    if(snap.val() !== true) return;
-    presenceRef.onDisconnect().remove().catch(() => {});
-    presenceRef.set(true).catch(() => {});
-  });
+  if(pill){
+    const presenceRef = db.ref("presence").push();
+    db.ref(".info/connected").on("value", snap => {
+      if(snap.val() !== true) return;
+      presenceRef.onDisconnect().remove().catch(() => {});
+      presenceRef.set(true).catch(() => {});
+    });
 
-  db.ref("presence").on("value", snap => {
-    const n = snap.numChildren();
-    onlineEl.textContent = n + (n === 1 ? " person online" : " people online");
-    pill.hidden = false;
-  });
+    db.ref("presence").on("value", snap => {
+      const n = snap.numChildren();
+      onlineEl.textContent = n + (n === 1 ? " person online" : " people online");
+      pill.hidden = false;
+    });
 
-  const totalRef = db.ref("totalVisits");
-  totalRef.transaction(current => (current || 0) + 1).catch(() => {});
-  totalRef.on("value", snap => {
-    const v = snap.val();
-    if(v != null) totalEl.textContent = v + " visits";
-  });
+    const totalRef = db.ref("totalVisits");
+    totalRef.transaction(current => (current || 0) + 1).catch(() => {});
+    totalRef.on("value", snap => {
+      const v = snap.val();
+      if(v != null) totalEl.textContent = v + " visits";
+    });
+  }
 
-  /* Write-only visitor log: IP + coarse location per visit, for the
-     site owner only (readable via the Firebase console — the public
-     page never reads this back, so other visitors never see it). */
+  /* Write-only visitor log, for the site owner only (readable via the
+     Firebase console — the public page never reads this back, so other
+     visitors never see any of it). Covers:
+       - location: IP + coarse city/country (existing)
+       - device & environment: type, viewport/screen, language, PWA mode
+       - return visits: a random id kept in localStorage (not tied to any
+         real identity) plus a local visit counter, so "new" vs
+         "returning" doesn't need a round-trip to the database
+       - performance: page load / DOM-ready timing
+       - navigation & engagement + content-specific: which tabs were
+         visited, whether search was used, which subject filters,
+         recordings and notes were opened, and total time on page —
+         accumulated in memory and sent once as the visit ends */
+  function getVisitMeta(){
+    try{
+      let id = localStorage.getItem("mekapVisitorId");
+      if(!id){
+        id = "v_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem("mekapVisitorId", id);
+      }
+      const count = parseInt(localStorage.getItem("mekapVisitCount") || "0", 10) + 1;
+      localStorage.setItem("mekapVisitCount", String(count));
+      let firstSeen = localStorage.getItem("mekapFirstSeen");
+      if(!firstSeen){
+        firstSeen = new Date().toISOString();
+        localStorage.setItem("mekapFirstSeen", firstSeen);
+      }
+      return { deviceId: id, visitCount: count, firstSeen: firstSeen, isReturning: count > 1 };
+    }catch(e){
+      return { deviceId: null, visitCount: 1, firstSeen: null, isReturning: false };
+    }
+  }
+
+  function getDeviceInfo(){
+    const w = window.innerWidth, h = window.innerHeight;
+    const touch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const minSide = Math.min(w, h);
+    let type = "desktop";
+    if(touch && minSide < 500) type = "mobile";
+    else if(touch && minSide < 1024) type = "tablet";
+    return {
+      type: type,
+      language: navigator.language || null,
+      viewport: w + "x" + h,
+      screen: screen.width + "x" + screen.height,
+      pwa: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
+    };
+  }
+
+  const visitStart = Date.now();
+  const deviceInfo = getDeviceInfo();
+  const visitMeta = getVisitMeta();
+  const dbUrl = firebaseConfig.databaseURL;
+  let visitLogPath = null;
+
+  function writeVisitLog(locationFields){
+    const ref = db.ref("visitorLog").push();
+    visitLogPath = "visitorLog/" + ref.key;
+    ref.set(Object.assign({
+      page: location.pathname + location.hash,
+      userAgent: navigator.userAgent,
+      device: deviceInfo,
+      visit: visitMeta,
+      ts: firebase.database.ServerValue.TIMESTAMP
+    }, locationFields || {})).catch(() => {});
+  }
+
   fetch("https://ipwho.is/")
     .then(r => r.json())
     .then(info => {
-      if(!info || info.success === false) return;
-      db.ref("visitorLog").push({
+      const ok = info && info.success !== false;
+      writeVisitLog(ok ? {
         ip: info.ip || null,
         city: info.city || null,
         region: info.region || null,
         country: info.country || null,
-        isp: (info.connection && info.connection.isp) || null,
-        page: location.pathname + location.hash,
-        userAgent: navigator.userAgent,
-        ts: firebase.database.ServerValue.TIMESTAMP
-      }).catch(() => {});
+        isp: (info.connection && info.connection.isp) || null
+      } : {});
     })
-    .catch(() => {});
+    .catch(() => writeVisitLog({}));
+
+  /* navigation & engagement + content-specific, accumulated in memory */
+  const engagement = {
+    tabsVisited: new Set([location.hash === "#notes" || location.hash === "#calendar" ? location.hash.slice(1) : "recordings"]),
+    searchUsed: false,
+    subjectFilters: new Set(),
+    recordingsOpened: new Set(),
+    notesOpened: new Set()
+  };
+  ["recordings", "notes", "calendar"].forEach(name => {
+    const btn = document.getElementById("tabBtn-" + name);
+    if(btn) btn.addEventListener("click", () => engagement.tabsVisited.add(name));
+  });
+  const qBoxEl = document.getElementById("q");
+  if(qBoxEl) qBoxEl.addEventListener("input", () => { if(qBoxEl.value.trim()) engagement.searchUsed = true; });
+  document.addEventListener("click", function(e){
+    const openLink = e.target.closest(".open");
+    if(openLink){
+      const card = openLink.closest(".card");
+      if(card && card.id) engagement.recordingsOpened.add(card.id);
+    }
+    const noteLink = e.target.closest(".nopen");
+    if(noteLink){
+      const title = noteLink.closest(".nrow")?.querySelector(".ntitle");
+      if(title) engagement.notesOpened.add(title.textContent.trim());
+    }
+    const chip = e.target.closest(".subjectDD-item");
+    if(chip && chip.dataset.s) engagement.subjectFilters.add(chip.dataset.s);
+  });
+
+  let engagementSent = false;
+  function sendEngagement(){
+    if(engagementSent || !visitLogPath || !dbUrl) return;
+    engagementSent = true;
+    let perf = {};
+    try{
+      const nav = performance.getEntriesByType("navigation")[0];
+      if(nav) perf = { loadMs: Math.round(nav.loadEventEnd), domMs: Math.round(nav.domContentLoadedEventEnd) };
+    }catch(e){}
+    const payload = {
+      durationSec: Math.round((Date.now() - visitStart) / 1000),
+      tabsVisited: [...engagement.tabsVisited],
+      searchUsed: engagement.searchUsed,
+      subjectFilters: [...engagement.subjectFilters],
+      recordingsOpened: [...engagement.recordingsOpened],
+      notesOpened: [...engagement.notesOpened],
+      performance: perf
+    };
+    try{
+      fetch(dbUrl + "/" + visitLogPath + ".json", {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(() => {});
+    }catch(e){}
+  }
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "hidden") sendEngagement();
+  });
+  window.addEventListener("pagehide", sendEngagement);
 })();
 
 /* IP acknowledgment gate — shown on every page load, not just once */
