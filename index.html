@@ -656,6 +656,8 @@
   .calChip-link:hover{transform:translateY(-1px);box-shadow:0 3px 7px rgba(22,35,58,.25)}
   .calChip-done{background:#DDE2EB;color:#8A93A8;font-weight:500;cursor:pointer;box-shadow:none}
   .calChip-done:hover{background:#CBD2E0;color:#5D6892}
+  .calChip-done:not([data-recid]){cursor:default}
+  .calChip-done:not([data-recid]):hover{background:#DDE2EB;color:#8A93A8}
   .recFlash{animation:recFlash 1.6s ease-out}
   @keyframes recFlash{
     0%{box-shadow:0 0 0 3px rgba(27,75,143,.55)}
@@ -1650,7 +1652,8 @@ function to24(t){
   if(ap === "AM" && h === 12) h = 0;
   return String(h).padStart(2,"0") + ":" + m[2];
 }
-const sorted = RECORDINGS.filter(r => !/^quiz\b/i.test(r.lecture)).sort((a,b) => stamp(b) - stamp(a));
+const isQuiz = r => /^quiz\b/i.test(r.lecture);
+const sorted = RECORDINGS.filter(r => !isQuiz(r)).sort((a,b) => stamp(b) - stamp(a));
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const recId = r => "rec-" + r.date + "-" + String(r.time || "").replace(/[^0-9A-Za-z]+/g,"");
@@ -1911,8 +1914,10 @@ function calChip(r){
 
 function calChipDone(r){
   const s = sub(r.subject);
-  const tip = r.subject + " — " + r.lecture + "\n" + slot(r) + (r.faculty ? "\n" + r.faculty : "") + "\nCompleted · tap to view in Recordings";
-  return '<div class="calChip calChip-done" data-recid="' + esc(recId(r)) + '" title="' + esc(tip) + '">' +
+  const clickable = !isQuiz(r);
+  const tip = r.subject + " — " + r.lecture + "\n" + slot(r) + (r.faculty ? "\n" + r.faculty : "") +
+    (clickable ? "\nCompleted · tap to view in Recordings" : "\nCompleted");
+  return '<div class="calChip calChip-done"' + (clickable ? ' data-recid="' + esc(recId(r)) + '"' : "") + ' title="' + esc(tip) + '">' +
     '<span class="calChipText">' + esc(s.code) + '<span class="calChipLecture"> · ' + esc(r.lecture) + '</span></span>' +
   '</div>';
 }
