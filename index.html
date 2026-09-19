@@ -1813,14 +1813,15 @@ function render(){
   }
 
   const held = list.filter(r => endStamp(r) <= Date.now());
+  const visible = held.filter(r => r.campus || hasRecordedUrl(r));
 
-  let html = group(held);
-  if(!held.length) html += '<div class="empty"><h3>No classes held yet</h3><p>Sessions will appear here once the first class is recorded.</p></div>';
+  let html = group(visible);
+  if(!visible.length) html += '<div class="empty"><h3>No recordings uploaded yet</h3><p>Cards appear here once a recording link is hardcoded for at least one class.</p></div>';
   out.innerHTML = html;
   renderNotes();
   renderCalendar();
 
-  const withLink = held.filter(r => !r.campus && !isPending(r)).length;
+  const withLink = held.filter(r => !r.campus && hasRecordedUrl(r)).length;
   tally.textContent = filtering
     ? list.length + " of " + sorted.length + " classes"
     : sorted.length + " classes scheduled · " + held.length + " held so far · " + withLink + " recordings linked";
@@ -2299,7 +2300,7 @@ function toIST(date){
 
 buildChips();
 render();
-cntRecordings.textContent = sorted.filter(function(r){ return !isPending(r); }).length;
+cntRecordings.textContent = sorted.filter(function(r){ return r.campus || hasRecordedUrl(r); }).length;
 cntNotes.textContent = NOTES.length;
 setTab(location.hash === "#notes" || location.hash === "#calendar" ? location.hash.slice(1) : "recordings");
 
