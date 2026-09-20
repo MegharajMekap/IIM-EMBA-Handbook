@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, noarchive, nofollow">
+<link rel="icon" href="logo.jpg" type="image/jpeg">
+<link rel="apple-touch-icon" href="logo.jpg">
+<meta name="theme-color" content="#1B4B8F">
+<title>Your Profile — Class Recordings and Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#F6F7FA;
+    --card:#FFFFFF;
+    --line:#E2E6EE;
+    --line-soft:#EDF0F5;
+
+    --ink:#16233A;
+    --ink-soft:#3A4761;
+    --mute:#6B778F;
+
+    --navy:#1B4B8F;
+    --navy-deep:#123568;
+    --navy-tint:#EEF3FA;
+
+    --serif:"Source Serif 4",Georgia,serif;
+    --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+
+    --lift:0 1px 2px rgba(22,35,58,.05),0 6px 16px rgba(22,35,58,.05);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--page);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--navy);outline-offset:3px;border-radius:4px}
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background-image:
+      linear-gradient(to right, rgba(27,75,143,.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(27,75,143,.05) 1px, transparent 1px);
+    background-size:36px 36px;
+    -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 48%,rgba(0,0,0,.25) 82%,transparent 100%);
+    mask-image:linear-gradient(to bottom,#000 0%,#000 48%,rgba(0,0,0,.25) 82%,transparent 100%);
+  }
+
+  .wrap{max-width:640px;margin:0 auto;padding:48px 24px 96px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+  .backLink{
+    display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;
+    color:var(--mute);text-decoration:none;
+  }
+  .backLink:hover{color:var(--navy)}
+  .backLink svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  h1{font-family:var(--serif);font-weight:700;font-size:1.7rem;margin:0 0 6px;color:var(--ink)}
+  .lede{margin:0 0 32px;color:var(--mute);font-size:14px}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:26px 26px 28px;box-shadow:var(--lift);margin-bottom:22px;
+  }
+  .card h2{font-family:var(--serif);font-weight:700;font-size:1.05rem;margin:0 0 4px;color:var(--ink)}
+  .cardSub{margin:0 0 18px;color:var(--mute);font-size:13px}
+
+  .avatarRow{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+  .avatar{
+    width:58px;height:58px;border-radius:50%;flex:none;overflow:hidden;
+    background:linear-gradient(150deg,#2A5CA6,var(--navy-deep));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:var(--sans);font-weight:700;font-size:19px;letter-spacing:.02em;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .idName{font-weight:700;font-size:16.5px;color:var(--ink)}
+  .idEmail{font-size:13px;color:var(--mute);word-break:break-all}
+  .avatarActions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .photoBtn{
+    background:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px;
+    font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;
+  }
+  .photoBtn:hover{background:var(--navy-tint)}
+  .photoBtn:disabled{opacity:.6;cursor:default}
+  .photoRemove{
+    background:none;border:none;font-size:13px;font-weight:600;color:var(--mute);cursor:pointer;padding:0;
+  }
+  .photoRemove:hover{color:#B3261E}
+  .photoRemove[hidden]{display:none}
+
+  .field{margin-bottom:14px}
+  .field[hidden]{display:none}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  .field input{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+    font:inherit;font-size:14.5px;background:var(--page);transition:border-color .15s ease,box-shadow .15s ease;
+  }
+  .field input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--navy-tint)}
+  .field input:disabled{color:var(--mute);cursor:not-allowed}
+  .hint{margin:6px 0 0;font-size:12px;color:var(--mute)}
+
+  .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .btn{
+    background:var(--navy);color:#fff;border:none;border-radius:9px;padding:11px 18px;
+    font-size:14px;font-weight:600;cursor:pointer;
+    box-shadow:0 4px 14px rgba(27,75,143,.28);transition:background .15s ease,transform .15s ease;
+  }
+  .btn:hover{background:var(--navy-deep);transform:translateY(-1px)}
+  .btn:disabled{opacity:.6;cursor:default;transform:none}
+  .btn.ghost{
+    background:none;color:var(--navy);box-shadow:none;border:1px solid var(--line);
+  }
+  .btn.ghost:hover{background:var(--navy-tint);transform:none}
+  .btn.danger{background:#B3261E;box-shadow:0 4px 14px rgba(179,38,30,.22)}
+  .btn.danger:hover{background:#8f1e18}
+
+  .msg{
+    border-radius:8px;padding:9px 12px;font-size:12.5px;margin-top:14px;display:none;
+  }
+  .msg.show{display:block}
+  .msg.err{color:#B3261E;background:#FDECEC;border:1px solid #F5C6C6}
+  .msg.ok{color:#1E6B3A;background:#E9F7EE;border:1px solid #BEE5C9}
+
+  /* signed-out state */
+  .gate{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:40px 28px;text-align:center;box-shadow:var(--lift);
+  }
+  .gate h2{font-family:var(--serif);font-weight:700;font-size:1.2rem;margin:0 0 6px;color:var(--ink)}
+  .gate p{margin:0 0 20px;color:var(--mute);font-size:14px}
+
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="backLink" href="index.html">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      Back to recordings
+    </a>
+  </div>
+
+  <div id="signedOutGate" class="gate" hidden>
+    <h2>You're not signed in</h2>
+    <p>Sign in on the main page to view and manage your profile.</p>
+    <a class="btn" href="index.html">Go to sign in</a>
+  </div>
+
+  <div id="profileContent" hidden>
+    <h1>Your profile</h1>
+    <p class="lede">Manage your account details for this site.</p>
+
+    <div class="card">
+      <div class="avatarRow">
+        <div class="avatar" id="pAvatar">?</div>
+        <div>
+          <div class="idName" id="pName">—</div>
+          <div class="idEmail" id="pEmail">—</div>
+        </div>
+      </div>
+      <div class="avatarActions">
+        <button type="button" class="photoBtn" id="photoBtn">Change photo</button>
+        <button type="button" class="photoRemove" id="photoRemoveBtn" hidden>Remove photo</button>
+        <input type="file" id="photoInput" accept="image/*" hidden>
+      </div>
+      <p class="hint">JPG, PNG or GIF, up to 1 MB.</p>
+      <div class="msg" id="photoMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Display name</h2>
+      <p class="cardSub">Shown next to your account across this site.</p>
+      <form id="nameForm">
+        <div class="field">
+          <label for="nameInput">Name</label>
+          <input type="text" id="nameInput" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="btnRow">
+          <button type="submit" class="btn" id="nameSaveBtn">Save name</button>
+        </div>
+        <div class="msg" id="nameMsg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Password</h2>
+      <p class="cardSub">Update your password, or send yourself a reset link by email.</p>
+      <form id="passForm">
+        <div class="field">
+          <label for="currentPassword">Current password</label>
+          <input type="password" id="currentPassword" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="newPassword">New password</label>
+          <input type="password" id="newPassword" autocomplete="new-password" minlength="6" required>
+        </div>
+        <p class="hint">Password must be at least 6 characters.</p>
+        <div class="btnRow">
+          <button type="submit" class="btn" id="passSaveBtn">Update password</button>
+          <button type="button" class="btn ghost" id="resetLinkBtn">Email me a reset link instead</button>
+        </div>
+        <div class="msg" id="passMsg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Sign out</h2>
+      <p class="cardSub">Sign out of your account on this device.</p>
+      <div class="btnRow">
+        <button type="button" class="btn danger" id="signOutBtn">Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script>
+(function(){
+  if(typeof firebase === "undefined") return;
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKdMASnmqGb5A9R0aa4rf4fCSqiWJ3RgU",
+    authDomain: "iim-emba-handbook.firebaseapp.com",
+    databaseURL: "https://iim-emba-handbook-default-rtdb.firebaseio.com",
+    projectId: "iim-emba-handbook",
+    storageBucket: "iim-emba-handbook.firebasestorage.app",
+    messagingSenderId: "1049773941554",
+    appId: "1:1049773941554:web:518bd39a7305de6571ad2b"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const storage = firebase.storage();
+  const MAX_PHOTO_BYTES = 1 * 1024 * 1024;
+
+  const signedOutGate = document.getElementById("signedOutGate");
+  const profileContent = document.getElementById("profileContent");
+  const pAvatar = document.getElementById("pAvatar");
+  const pName = document.getElementById("pName");
+  const pEmail = document.getElementById("pEmail");
+
+  const photoBtn = document.getElementById("photoBtn");
+  const photoRemoveBtn = document.getElementById("photoRemoveBtn");
+  const photoInput = document.getElementById("photoInput");
+  const photoMsg = document.getElementById("photoMsg");
+
+  const nameForm = document.getElementById("nameForm");
+  const nameInput = document.getElementById("nameInput");
+  const nameSaveBtn = document.getElementById("nameSaveBtn");
+  const nameMsg = document.getElementById("nameMsg");
+
+  const passForm = document.getElementById("passForm");
+  const currentPassword = document.getElementById("currentPassword");
+  const newPassword = document.getElementById("newPassword");
+  const passSaveBtn = document.getElementById("passSaveBtn");
+  const resetLinkBtn = document.getElementById("resetLinkBtn");
+  const passMsg = document.getElementById("passMsg");
+
+  const signOutBtn = document.getElementById("signOutBtn");
+
+  function showMsg(el, text, ok){
+    el.textContent = text;
+    el.classList.remove("err", "ok");
+    el.classList.add("show", ok ? "ok" : "err");
+  }
+  function clearMsg(el){
+    el.classList.remove("show", "err", "ok");
+  }
+
+  function renderUser(user){
+    const label = (user.displayName || user.email || "?").trim();
+    const initials = label.split(/\s+/).map(function(w){ return w[0]; }).slice(0, 2).join("").toUpperCase();
+    if(user.photoURL){
+      pAvatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
+      photoRemoveBtn.hidden = false;
+    } else {
+      pAvatar.textContent = initials || "?";
+      photoRemoveBtn.hidden = true;
+    }
+    pName.textContent = user.displayName || "(no name set)";
+    pEmail.textContent = user.email || "";
+    nameInput.value = user.displayName || "";
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      signedOutGate.hidden = true;
+      profileContent.hidden = false;
+      renderUser(user);
+    } else {
+      signedOutGate.hidden = false;
+      profileContent.hidden = true;
+    }
+  });
+
+  nameForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    clearMsg(nameMsg);
+    const user = auth.currentUser;
+    if(!user) return;
+    const name = nameInput.value.trim();
+    nameSaveBtn.disabled = true;
+    user.updateProfile({ displayName: name }).then(function(){
+      renderUser(user);
+      showMsg(nameMsg, "Name updated.", true);
+    }).catch(function(err){
+      showMsg(nameMsg, "Something went wrong: " + err.message, false);
+    }).finally(function(){
+      nameSaveBtn.disabled = false;
+    });
+  });
+
+  passForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    clearMsg(passMsg);
+    const user = auth.currentUser;
+    if(!user || !user.email) return;
+    const curPass = currentPassword.value;
+    const newPass = newPassword.value;
+    passSaveBtn.disabled = true;
+
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, curPass);
+    user.reauthenticateWithCredential(cred)
+      .then(function(){ return user.updatePassword(newPass); })
+      .then(function(){
+        showMsg(passMsg, "Password updated.", true);
+        passForm.reset();
+      }).catch(function(err){
+        const messages = {
+          "auth/wrong-password": "Current password is incorrect.",
+          "auth/invalid-credential": "Current password is incorrect.",
+          "auth/weak-password": "New password should be at least 6 characters.",
+          "auth/requires-recent-login": "Please sign out and sign in again, then retry."
+        };
+        showMsg(passMsg, messages[err.code] || ("Something went wrong: " + err.message), false);
+      }).finally(function(){
+        passSaveBtn.disabled = false;
+      });
+  });
+
+  resetLinkBtn.addEventListener("click", function(){
+    clearMsg(passMsg);
+    const user = auth.currentUser;
+    if(!user || !user.email) return;
+    resetLinkBtn.disabled = true;
+    auth.sendPasswordResetEmail(user.email).then(function(){
+      showMsg(passMsg, "Reset link sent to " + user.email + ".", true);
+    }).catch(function(err){
+      showMsg(passMsg, "Something went wrong: " + err.message, false);
+    }).finally(function(){
+      resetLinkBtn.disabled = false;
+    });
+  });
+
+  photoBtn.addEventListener("click", function(){
+    photoInput.value = "";
+    photoInput.click();
+  });
+
+  photoInput.addEventListener("change", function(){
+    clearMsg(photoMsg);
+    const user = auth.currentUser;
+    const file = photoInput.files && photoInput.files[0];
+    if(!user || !file) return;
+
+    if(!file.type.startsWith("image/")){
+      showMsg(photoMsg, "Please choose an image file.", false);
+      return;
+    }
+    if(file.size > MAX_PHOTO_BYTES){
+      showMsg(photoMsg, "That image is too large — please choose one under 1 MB.", false);
+      return;
+    }
+
+    photoBtn.disabled = true;
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const ref = storage.ref("profilePhotos/" + user.uid + "/photo." + ext);
+    ref.put(file, { contentType: file.type }).then(function(){
+      return ref.getDownloadURL();
+    }).then(function(url){
+      return user.updateProfile({ photoURL: url });
+    }).then(function(){
+      renderUser(user);
+      showMsg(photoMsg, "Profile photo updated.", true);
+    }).catch(function(err){
+      showMsg(photoMsg, "Something went wrong: " + err.message, false);
+    }).finally(function(){
+      photoBtn.disabled = false;
+    });
+  });
+
+  photoRemoveBtn.addEventListener("click", function(){
+    clearMsg(photoMsg);
+    const user = auth.currentUser;
+    if(!user) return;
+    photoRemoveBtn.disabled = true;
+    user.updateProfile({ photoURL: null }).then(function(){
+      renderUser(user);
+      showMsg(photoMsg, "Profile photo removed.", true);
+    }).catch(function(err){
+      showMsg(photoMsg, "Something went wrong: " + err.message, false);
+    }).finally(function(){
+      photoRemoveBtn.disabled = false;
+    });
+  });
+
+  signOutBtn.addEventListener("click", function(){
+    auth.signOut().then(function(){
+      window.location.href = "index.html";
+    });
+  });
+})();
+</script>
+</body>
+</html>
