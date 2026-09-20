@@ -98,6 +98,16 @@
     padding:3px 9px;border-radius:999px;background:linear-gradient(150deg,#FDBA74,#F97316);color:#fff;
   }
   .roleBadge.admin{background:var(--navy-tint);color:var(--navy)}
+  .tabBar{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .tabBtn{
+    background:none;border:none;border-bottom:2px solid transparent;padding:11px 4px;margin-bottom:-1px;
+    font-family:var(--sans);font-size:14px;font-weight:600;color:var(--mute);cursor:pointer;
+    margin-right:22px;transition:color .15s ease,border-color .15s ease;
+  }
+  .tabBtn:hover{color:var(--ink-soft)}
+  .tabBtn.active{color:var(--navy);border-bottom-color:var(--navy)}
+  .tabBtn[hidden]{display:none}
+  .tabPanel[hidden]{display:none}
   .limitedNote{
     background:var(--navy-tint);border:1px solid #DCE6F4;border-radius:10px;
     padding:12px 16px;font-size:13px;color:var(--ink-soft);margin:0 0 26px;line-height:1.55;
@@ -147,6 +157,31 @@
     border-radius:999px;padding:2px 9px;
   }
 
+  /* ---------- charts ---------- */
+  .chartsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  .chartCard{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:var(--lift);
+  }
+  .chartCard h3{
+    font-family:var(--sans);font-weight:700;font-size:13px;color:var(--ink);margin:0 0 14px;
+    display:flex;align-items:baseline;gap:8px;
+  }
+  .chartCard .chartSub{font-weight:500;font-size:11.5px;color:var(--mute)}
+  .chartBody{min-height:150px}
+  .chartBody .empty{padding:40px 10px;font-size:12.5px}
+  .barRow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .barRow:last-child{margin-bottom:0}
+  .barLabel{flex:0 0 108px;font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barTrack{flex:1;background:var(--line-soft);border-radius:4px;height:16px;position:relative;overflow:hidden}
+  .barFill{height:100%;border-radius:4px;min-width:3px}
+  .barValue{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;min-width:24px;text-align:right}
+  .vbars{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:18px}
+  .vbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .vbar .vbarFill{width:100%;border-radius:3px 3px 0 0;min-height:2px}
+  .vbar .vbarValue{font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:3px}
+  .vbar .vbarLabel{font-size:9.5px;color:var(--mute);margin-top:5px;writing-mode:vertical-rl;text-orientation:mixed;max-height:44px}
+
   /* ---------- add announcement ---------- */
   .annForm{
     background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;
@@ -182,6 +217,8 @@
     font-size:12.5px;font-weight:600;color:#B3261E;cursor:pointer;transition:background .15s ease,border-color .15s ease;
   }
   .annDel:hover{background:#FDECEC;border-color:#F5C6C6}
+  .annClear{color:var(--ink-soft)}
+  .annClear:hover{background:var(--navy-tint);border-color:#C6D0E0}
 
   /* ---------- pagination ---------- */
   .pagination{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:14px}
@@ -300,8 +337,12 @@
       <button class="signout" id="signOutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Sign out</button>
     </div>
 
-    <p class="limitedNote" id="limitedNote" hidden>You're signed in as <strong>Admin</strong> — you can post announcements below. Full site analytics (visitor IPs, locations, device data) are only visible to the Super Admin.</p>
+    <div class="tabBar" id="tabBar">
+      <button class="tabBtn" id="tabBtnAnalytics" data-tab="analytics">Analytics</button>
+      <button class="tabBtn" id="tabBtnAnnouncements" data-tab="announcements">Announcements</button>
+    </div>
 
+    <div id="tabPanelAnalytics" class="tabPanel">
     <div id="superOnly" hidden>
       <div class="statRow">
         <div class="stat"><div class="statIcon green"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div><div><div class="n" id="statOnline">–</div><div class="l">Online right now</div></div></div>
@@ -309,7 +350,169 @@
         <div class="stat"><div class="statIcon violet"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 18h6"/></svg></div><div><div class="n" id="statInstalls">–</div><div class="l">PWA installs logged</div></div></div>
         <div class="stat"><div class="statIcon amber"><svg viewBox="0 0 24 24"><path d="M9 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M9 15l10-10M13 5h6v6"/></svg></div><div><div class="n" id="statLogged">–</div><div class="l">Visit log entries loaded</div></div></div>
       </div>
+      <div class="statRow">
+        <div class="stat"><div class="statIcon navy"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></div><div><div class="n" id="statToday">–</div><div class="l">Visits today</div></div></div>
+        <div class="stat"><div class="statIcon green"><svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M21 6H8a5 5 0 0 0 0 10h1M7 22l-4-4 4-4M3 18h13a5 5 0 0 0 0-10h-1"/></svg></div><div><div class="n" id="statReturning">–</div><div class="l">Returning visitors</div></div></div>
+        <div class="stat"><div class="statIcon violet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div><div><div class="n" id="statAvgDuration">–</div><div class="l">Avg. session duration</div></div></div>
+        <div class="stat"><div class="statIcon amber"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><div><div class="n" id="statAvgLoad">–</div><div class="l">Avg. page load time</div></div></div>
+      </div>
     </div>
+
+    <div id="superOnlySections" hidden>
+      <div class="section">
+        <div class="sectionHead">
+          <h2><span class="dot" style="background:var(--navy)"></span>Analytics dashboard</h2>
+        </div>
+        <p class="sectionNote">Computed from the visit log entries currently loaded below · updates as more load.</p>
+        <div class="chartsGrid">
+          <div class="chartCard">
+            <h3>Visits per day <span class="chartSub">last 14 days</span></h3>
+            <div class="chartBody" id="chartVisitsPerDay"></div>
+          </div>
+          <div class="chartCard">
+            <h3>Device breakdown</h3>
+            <div class="chartBody" id="chartDevices"></div>
+          </div>
+          <div class="chartCard">
+            <h3>Top locations</h3>
+            <div class="chartBody" id="chartLocations"></div>
+          </div>
+          <div class="chartCard">
+            <h3>Top ISPs</h3>
+            <div class="chartBody" id="chartIsps"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sectionHead">
+          <h2><span class="dot" style="background:#9333EA"></span>PWA installs</h2>
+        </div>
+        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="installsClearFilters" hidden>Clear filters</button></div>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr>
+              <tr class="filterRow">
+                <th>
+                  <select class="filterInput" id="fInstTime">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fInstKind">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fInstPlatform">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fInstUA">
+                    <option value="">All</option>
+                  </select>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="installsBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="installsPager"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sectionHead">
+          <h2><span class="dot" style="background:#F97316"></span>Visitor log</h2>
+        </div>
+        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="visitsClearFilters" hidden>Clear filters</button></div>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Location</th><th>IP address</th><th>ISP</th><th>Device</th><th>Return visit</th>
+                <th>Duration</th><th>Tabs</th><th>Search</th><th>Subjects</th>
+                <th>Recordings opened</th><th>Notes opened</th><th>Load time</th>
+              </tr>
+              <tr class="filterRow">
+                <th>
+                  <select class="filterInput" id="fVisTime">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisLocation">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisIp">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisIsp">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisDevice">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisReturn">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisDuration">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisTabs">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisSearch">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisSubjects">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisRecordings">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisNotes">
+                    <option value="">All</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisLoad">
+                    <option value="">All</option>
+                  </select>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="visitsBody"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="visitsPager"></div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div id="tabPanelAnnouncements" class="tabPanel">
+    <p class="limitedNote" id="limitedNote" hidden>You're signed in as <strong>Admin</strong> — you can post announcements below. Full site analytics (visitor IPs, locations, device data) are only visible to the Super Admin.</p>
 
     <div class="section">
       <div class="sectionHead"><h2><span class="dot" style="background:var(--navy)"></span>Add announcement</h2></div>
@@ -335,7 +538,7 @@
       <div class="annList" id="annList"><div class="empty">Loading…</div></div>
     </div>
 
-    <div id="superOnlySections" hidden>
+    <div id="auditSection" hidden>
       <div class="section">
         <div class="sectionHead">
           <h2><span class="dot" style="background:#1E8A4C"></span>Admin activity</h2>
@@ -343,94 +546,7 @@
         <p class="sectionNote">Every announcement added, deleted, or restored, by whichever admin made the change. "Remove"/"Restore" undoes that specific action.</p>
         <div class="annList" id="auditList"><div class="empty">Loading…</div></div>
       </div>
-
-      <div class="section">
-        <div class="sectionHead">
-          <h2><span class="dot" style="background:#9333EA"></span>PWA installs</h2>
-        </div>
-        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="installsClearFilters" hidden>Clear filters</button></div>
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr>
-              <tr class="filterRow">
-                <th><input type="text" class="filterInput" id="fInstTime" placeholder="Filter…"></th>
-                <th>
-                  <select class="filterInput" id="fInstKind">
-                    <option value="">All</option>
-                    <option value="installed">Installed</option>
-                    <option value="launched-standalone">Launched standalone</option>
-                  </select>
-                </th>
-                <th>
-                  <select class="filterInput" id="fInstPlatform">
-                    <option value="">All</option>
-                    <option value="android">Android</option>
-                    <option value="ios">iOS</option>
-                    <option value="other">Other</option>
-                  </select>
-                </th>
-                <th><input type="text" class="filterInput" id="fInstUA" placeholder="Filter…"></th>
-              </tr>
-            </thead>
-            <tbody id="installsBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
-          </table>
-          <div class="pagination" id="installsPager"></div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="sectionHead">
-          <h2><span class="dot" style="background:#F97316"></span>Visitor log</h2>
-        </div>
-        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="visitsClearFilters" hidden>Clear filters</button></div>
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th><th>Location</th><th>ISP</th><th>Device</th><th>Return visit</th>
-                <th>Duration</th><th>Tabs</th><th>Search</th><th>Subjects</th>
-                <th>Recordings opened</th><th>Notes opened</th><th>Load time</th>
-              </tr>
-              <tr class="filterRow">
-                <th><input type="text" class="filterInput" id="fVisTime" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisLocation" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisIsp" placeholder="Filter…"></th>
-                <th>
-                  <select class="filterInput" id="fVisDevice">
-                    <option value="">All</option>
-                    <option value="mobile">Mobile</option>
-                    <option value="tablet">Tablet</option>
-                    <option value="desktop">Desktop</option>
-                  </select>
-                </th>
-                <th>
-                  <select class="filterInput" id="fVisReturn">
-                    <option value="">All</option>
-                    <option value="new">New</option>
-                    <option value="returning">Returning</option>
-                  </select>
-                </th>
-                <th><input type="text" class="filterInput" id="fVisDuration" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisTabs" placeholder="Filter…"></th>
-                <th>
-                  <select class="filterInput" id="fVisSearch">
-                    <option value="">All</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </th>
-                <th><input type="text" class="filterInput" id="fVisSubjects" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisRecordings" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisNotes" placeholder="Filter…"></th>
-                <th><input type="text" class="filterInput" id="fVisLoad" placeholder="Filter…"></th>
-              </tr>
-            </thead>
-            <tbody id="visitsBody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
-          </table>
-          <div class="pagination" id="visitsPager"></div>
-        </div>
-      </div>
+    </div>
     </div>
   </div>
 </div>
@@ -535,20 +651,37 @@ function stopDashboard(){
   document.getElementById("limitedNote").hidden = true;
   document.getElementById("superOnly").hidden = true;
   document.getElementById("superOnlySections").hidden = true;
+  document.getElementById("auditSection").hidden = true;
+  document.getElementById("tabBtnAnalytics").hidden = true;
+  switchTab("announcements");
 
   document.getElementById("annList").innerHTML = '<div class="empty">Loading…</div>';
   document.getElementById("auditList").innerHTML = '<div class="empty">Loading…</div>';
   document.getElementById("installsBody").innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
-  document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Loading…</td></tr>';
+  document.getElementById("visitsBody").innerHTML = '<tr><td colspan="13" class="empty">Loading…</td></tr>';
   document.getElementById("installsPager").innerHTML = "";
   document.getElementById("visitsPager").innerHTML = "";
   document.getElementById("installsClearFilters").hidden = true;
   document.getElementById("visitsClearFilters").hidden = true;
   [].forEach.call(document.querySelectorAll(".filterInput"), function(el){ el.value = ""; });
-  ["statOnline","statTotal","statInstalls","statLogged"].forEach(function(id){
+  ["statOnline","statTotal","statInstalls","statLogged","statToday","statReturning","statAvgDuration","statAvgLoad"].forEach(function(id){
     document.getElementById(id).textContent = "–";
   });
+  ["chartVisitsPerDay","chartDevices","chartLocations","chartIsps"].forEach(function(id){
+    document.getElementById(id).innerHTML = "";
+  });
 }
+
+/* ---------- tabs ---------- */
+function switchTab(name){
+  document.getElementById("tabPanelAnalytics").hidden = name !== "analytics";
+  document.getElementById("tabPanelAnnouncements").hidden = name !== "announcements";
+  [].forEach.call(document.querySelectorAll(".tabBtn"), function(btn){
+    btn.classList.toggle("active", btn.dataset.tab === name);
+  });
+}
+document.getElementById("tabBtnAnalytics").addEventListener("click", function(){ switchTab("analytics"); });
+document.getElementById("tabBtnAnnouncements").addEventListener("click", function(){ switchTab("announcements"); });
 
 /* ---------- dashboard data ---------- */
 function startDashboard(isSuper){
@@ -559,6 +692,9 @@ function startDashboard(isSuper){
   document.getElementById("limitedNote").hidden = isSuper;
   document.getElementById("superOnly").hidden = !isSuper;
   document.getElementById("superOnlySections").hidden = !isSuper;
+  document.getElementById("auditSection").hidden = !isSuper;
+  document.getElementById("tabBtnAnalytics").hidden = !isSuper;
+  switchTab(isSuper ? "analytics" : "announcements");
 
   startAnnouncements();
   if(isSuper){ startAnalytics(); startAuditLog(); }
@@ -695,6 +831,7 @@ function startAuditLog(){
         '<div class="txt"><p>' + actionLabel + ' <strong>' + esc(v.text) + '</strong></p>' +
         '<div class="meta">' + esc(who) + ' · ' + esc(fmtTime(v.ts)) + '</div></div>' +
         (canRevert ? '<button class="annDel" data-audit-key="' + esc(r.key) + '">' + revertLabel + '</button>' : '') +
+        '<button class="annDel annClear" data-clear-key="' + esc(r.key) + '" title="Remove this entry from the activity log — does not undo the change">Clear entry</button>' +
       '</div>';
     }).join("") + paginationHTML(auditPage, totalPages);
 
@@ -719,6 +856,14 @@ function startAuditLog(){
             });
           }
         });
+      });
+    });
+
+    [].forEach.call(list.querySelectorAll("[data-clear-key]"), function(btn){
+      btn.addEventListener("click", function(){
+        if(!confirm("Remove this entry from the activity log? This only clears the log entry — it does not undo the change itself.")) return;
+        const key = btn.dataset.clearKey;
+        db.ref("auditLog/" + key).remove();
       });
     });
 
@@ -751,6 +896,19 @@ function wireFilterInput(id, filters, key, isSelect, onChange){
   });
 }
 
+function populateSelectOptions(id, entries){
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All</option>' + entries.map(function(e){
+    return '<option value="' + esc(e.value) + '">' + esc(e.label) + '</option>';
+  }).join("");
+  if(entries.some(function(e){ return e.value === current; })) sel.value = current;
+}
+
+function uniqueSorted(values){
+  return Array.from(new Set(values.filter(function(v){ return v; }))).sort();
+}
+
 function startAnalytics(){
   trackListener(db.ref("presence"), function(snap){
     document.getElementById("statOnline").textContent = snap.numChildren();
@@ -764,12 +922,30 @@ function startAnalytics(){
   let installRows = [];
   let installsPage = 1;
   const installFilters = { time: "", kind: "", platform: "", userAgent: "" };
+  const installKindLabels = { installed: "Installed", "launched-standalone": "Launched standalone" };
+  const installPlatformLabels = { android: "Android", ios: "iOS", other: "Other" };
+
+  function populateInstallFilterOptions(){
+    populateSelectOptions("fInstTime", installRows.map(function(r){
+      const t = fmtTime(r.ts);
+      return { value: t.toLowerCase(), label: t };
+    }).filter(function(e, i, arr){ return arr.findIndex(function(o){ return o.value === e.value; }) === i; }));
+    populateSelectOptions("fInstKind", uniqueSorted(installRows.map(function(r){ return r.kind || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: installKindLabels[v] || v };
+    }));
+    populateSelectOptions("fInstPlatform", uniqueSorted(installRows.map(function(r){ return r.platform || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: installPlatformLabels[v] || v };
+    }));
+    populateSelectOptions("fInstUA", uniqueSorted(installRows.map(function(r){ return r.userAgent || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+  }
 
   function installMatchesFilters(r){
-    if(installFilters.time && !fmtTime(r.ts).toLowerCase().includes(installFilters.time)) return false;
-    if(installFilters.kind && r.kind !== installFilters.kind) return false;
-    if(installFilters.platform && r.platform !== installFilters.platform) return false;
-    if(installFilters.userAgent && !(r.userAgent || "").toLowerCase().includes(installFilters.userAgent)) return false;
+    if(installFilters.time && fmtTime(r.ts).toLowerCase() !== installFilters.time) return false;
+    if(installFilters.kind && (r.kind || "").toLowerCase() !== installFilters.kind) return false;
+    if(installFilters.platform && (r.platform || "").toLowerCase() !== installFilters.platform) return false;
+    if(installFilters.userAgent && (r.userAgent || "").toLowerCase() !== installFilters.userAgent) return false;
     return true;
   }
 
@@ -800,17 +976,16 @@ function startAnalytics(){
     });
   }
 
-  ["fInstTime", "fInstUA"].forEach(function(id){
-    wireFilterInput(id, installFilters, id === "fInstTime" ? "time" : "userAgent", false, function(){
+  const installFilterFieldMap = { fInstTime: "time", fInstKind: "kind", fInstPlatform: "platform", fInstUA: "userAgent" };
+  Object.keys(installFilterFieldMap).forEach(function(id){
+    wireFilterInput(id, installFilters, installFilterFieldMap[id], true, function(){
       installsPage = 1;
       renderInstallsPage();
     });
   });
-  wireFilterInput("fInstKind", installFilters, "kind", true, function(){ installsPage = 1; renderInstallsPage(); });
-  wireFilterInput("fInstPlatform", installFilters, "platform", true, function(){ installsPage = 1; renderInstallsPage(); });
   document.getElementById("installsClearFilters").addEventListener("click", function(){
     Object.keys(installFilters).forEach(function(k){ installFilters[k] = ""; });
-    ["fInstTime", "fInstKind", "fInstPlatform", "fInstUA"].forEach(function(id){ document.getElementById(id).value = ""; });
+    Object.keys(installFilterFieldMap).forEach(function(id){ document.getElementById(id).value = ""; });
     installsPage = 1;
     renderInstallsPage();
   });
@@ -820,6 +995,7 @@ function startAnalytics(){
     snap.forEach(function(child){ rows.unshift(child.val()); });
     installRows = rows;
     document.getElementById("statInstalls").textContent = rows.length;
+    populateInstallFilterOptions();
     renderInstallsPage();
   });
 
@@ -829,39 +1005,91 @@ function startAnalytics(){
   let visitRows = [];
   let visitsPage = 1;
   const visitFilters = {
-    time: "", location: "", isp: "", device: "", returnVisit: "",
+    time: "", location: "", ip: "", isp: "", device: "", returnVisit: "",
     duration: "", tabs: "", search: "", subjects: "", recordings: "", notes: "", load: ""
   };
 
+  function visitLocationStr(r){
+    return [r.city, r.region, r.country].filter(Boolean).join(", ");
+  }
+  function visitDurationStr(r){
+    return typeof r.durationSec === "number" ? (Math.round(r.durationSec / 6) / 10 + " min") : "";
+  }
+  function visitLoadStr(r){
+    return (r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : "";
+  }
+  const visitReturnLabels = { new: "New", returning: "Returning" };
+  const visitSearchLabels = { yes: "Yes", no: "No" };
+
+  function populateVisitFilterOptions(){
+    populateSelectOptions("fVisTime", visitRows.map(function(r){
+      const t = fmtTime(r.ts);
+      return { value: t.toLowerCase(), label: t };
+    }).filter(function(e, i, arr){ return arr.findIndex(function(o){ return o.value === e.value; }) === i; }));
+
+    populateSelectOptions("fVisLocation", uniqueSorted(visitRows.map(visitLocationStr)).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisIp", uniqueSorted(visitRows.map(function(r){ return r.ip || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisIsp", uniqueSorted(visitRows.map(function(r){ return r.isp || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisDevice", uniqueSorted(visitRows.map(function(r){ return (r.device && r.device.type) || ""; })).map(function(v){
+      return { value: v.toLowerCase(), label: v.charAt(0).toUpperCase() + v.slice(1) };
+    }));
+    populateSelectOptions("fVisReturn", uniqueSorted(visitRows.map(function(r){
+      return r.visit ? (r.visit.isReturning ? "returning" : "new") : "";
+    })).map(function(v){ return { value: v, label: visitReturnLabels[v] || v }; }));
+
+    populateSelectOptions("fVisDuration", uniqueSorted(visitRows.map(visitDurationStr)).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }).sort(function(a, b){ return parseFloat(a.value) - parseFloat(b.value); }));
+
+    populateSelectOptions("fVisTabs", uniqueSorted([].concat.apply([], visitRows.map(function(r){ return r.tabsVisited || []; }))).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisSearch", uniqueSorted(visitRows.map(function(r){ return r.searchUsed ? "yes" : "no"; })).map(function(v){
+      return { value: v, label: visitSearchLabels[v] || v };
+    }));
+    populateSelectOptions("fVisSubjects", uniqueSorted([].concat.apply([], visitRows.map(function(r){ return r.subjectFilters || []; }))).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisRecordings", uniqueSorted([].concat.apply([], visitRows.map(function(r){ return r.recordingsOpened || []; }))).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisNotes", uniqueSorted([].concat.apply([], visitRows.map(function(r){ return r.notesOpened || []; }))).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }));
+    populateSelectOptions("fVisLoad", uniqueSorted(visitRows.map(visitLoadStr)).map(function(v){
+      return { value: v.toLowerCase(), label: v };
+    }).sort(function(a, b){ return parseFloat(a.value) - parseFloat(b.value); }));
+  }
+
   function visitMatchesFilters(r){
     const f = visitFilters;
-    if(f.time && !fmtTime(r.ts).toLowerCase().includes(f.time)) return false;
-    const locationStr = ([r.city, r.region, r.country].filter(Boolean).join(", ") + " " + (r.ip || "")).toLowerCase();
-    if(f.location && !locationStr.includes(f.location)) return false;
-    if(f.isp && !(r.isp || "").toLowerCase().includes(f.isp)) return false;
+    if(f.time && fmtTime(r.ts).toLowerCase() !== f.time) return false;
+    if(f.location && visitLocationStr(r).toLowerCase() !== f.location) return false;
+    if(f.ip && (r.ip || "").toLowerCase() !== f.ip) return false;
+    if(f.isp && (r.isp || "").toLowerCase() !== f.isp) return false;
     if(f.device && (!r.device || r.device.type !== f.device)) return false;
     if(f.returnVisit){
       const isReturning = !!(r.visit && r.visit.isReturning);
       if(f.returnVisit === "returning" && !isReturning) return false;
       if(f.returnVisit === "new" && isReturning) return false;
     }
-    const durationStr = (typeof r.durationSec === "number" ? (Math.round(r.durationSec / 6) / 10 + " min") : "").toLowerCase();
-    if(f.duration && !durationStr.includes(f.duration)) return false;
-    const tabsStr = (r.tabsVisited || []).join(" ").toLowerCase();
-    if(f.tabs && !tabsStr.includes(f.tabs)) return false;
+    if(f.duration && visitDurationStr(r).toLowerCase() !== f.duration) return false;
+    if(f.tabs && !(r.tabsVisited || []).some(function(v){ return (v || "").toLowerCase() === f.tabs; })) return false;
     if(f.search){
       const used = !!r.searchUsed;
       if(f.search === "yes" && !used) return false;
       if(f.search === "no" && used) return false;
     }
-    const subjectsStr = (r.subjectFilters || []).join(" ").toLowerCase();
-    if(f.subjects && !subjectsStr.includes(f.subjects)) return false;
-    const recordingsStr = (r.recordingsOpened || []).join(" ").toLowerCase();
-    if(f.recordings && !recordingsStr.includes(f.recordings)) return false;
-    const notesStr = (r.notesOpened || []).join(" ").toLowerCase();
-    if(f.notes && !notesStr.includes(f.notes)) return false;
-    const loadStr = ((r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : "").toLowerCase();
-    if(f.load && !loadStr.includes(f.load)) return false;
+    if(f.subjects && !(r.subjectFilters || []).some(function(v){ return (v || "").toLowerCase() === f.subjects; })) return false;
+    if(f.recordings && !(r.recordingsOpened || []).some(function(v){ return (v || "").toLowerCase() === f.recordings; })) return false;
+    if(f.notes && !(r.notesOpened || []).some(function(v){ return (v || "").toLowerCase() === f.notes; })) return false;
+    if(f.load && visitLoadStr(r).toLowerCase() !== f.load) return false;
     return true;
   }
 
@@ -876,7 +1104,7 @@ function startAnalytics(){
     document.getElementById("visitsClearFilters").hidden = !Object.keys(visitFilters).some(function(k){ return visitFilters[k]; });
     const filtered = getFilteredVisitRows();
     if(!filtered.length){
-      body.innerHTML = '<tr><td colspan="12" class="empty">' + (visitRows.length ? "No visits match these filters." : "No visits logged yet.") + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="13" class="empty">' + (visitRows.length ? "No visits match these filters." : "No visits logged yet.") + '</td></tr>';
       pager.innerHTML = "";
       return;
     }
@@ -893,7 +1121,8 @@ function startAnalytics(){
       const load = (r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : '<span class="muted">–</span>';
       return "<tr>" +
         "<td>" + esc(fmtTime(r.ts)) + "</td>" +
-        "<td>" + loc + (r.ip ? '<br><span class="muted mono">' + esc(r.ip) + "</span>" : "") + "</td>" +
+        "<td>" + loc + "</td>" +
+        "<td class=\"mono muted\">" + (r.ip ? esc(r.ip) : "–") + "</td>" +
         "<td class=\"muted\">" + esc(r.isp || "–") + "</td>" +
         "<td>" + dev + "</td>" +
         "<td>" + ret + "</td>" +
@@ -913,13 +1142,12 @@ function startAnalytics(){
   }
 
   const visitFilterFieldMap = {
-    fVisTime: "time", fVisLocation: "location", fVisIsp: "isp", fVisDevice: "device",
+    fVisTime: "time", fVisLocation: "location", fVisIp: "ip", fVisIsp: "isp", fVisDevice: "device",
     fVisReturn: "returnVisit", fVisDuration: "duration", fVisTabs: "tabs", fVisSearch: "search",
     fVisSubjects: "subjects", fVisRecordings: "recordings", fVisNotes: "notes", fVisLoad: "load"
   };
-  const visitSelectIds = { fVisDevice: true, fVisReturn: true, fVisSearch: true };
   Object.keys(visitFilterFieldMap).forEach(function(id){
-    wireFilterInput(id, visitFilters, visitFilterFieldMap[id], !!visitSelectIds[id], function(){
+    wireFilterInput(id, visitFilters, visitFilterFieldMap[id], true, function(){
       visitsPage = 1;
       renderVisitsPage();
     });
@@ -931,13 +1159,94 @@ function startAnalytics(){
     renderVisitsPage();
   });
 
+  function barsHTML(entries, colorFn){
+    if(!entries.length) return '<div class="empty">No data yet.</div>';
+    const max = Math.max.apply(null, entries.map(function(e){ return e.value; })) || 1;
+    return entries.map(function(e, i){
+      const pct = Math.max(3, Math.round((e.value / max) * 100));
+      return '<div class="barRow">' +
+        '<div class="barLabel" title="' + esc(e.label) + '">' + esc(e.label) + '</div>' +
+        '<div class="barTrack"><div class="barFill" style="width:' + pct + '%;background:' + (colorFn ? colorFn(e, i) : "var(--navy)") + '"></div></div>' +
+        '<div class="barValue">' + e.value + '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function topCounts(values, limit){
+    const counts = {};
+    values.forEach(function(v){ if(v) counts[v] = (counts[v] || 0) + 1; });
+    return Object.keys(counts).map(function(k){ return { label: k, value: counts[k] }; })
+      .sort(function(a, b){ return b.value - a.value; }).slice(0, limit);
+  }
+
+  function updateAnalyticsDashboard(){
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayCount = visitRows.filter(function(r){ return r.ts >= startOfToday; }).length;
+    document.getElementById("statToday").textContent = todayCount;
+
+    const withVisitInfo = visitRows.filter(function(r){ return r.visit; });
+    const returningCount = withVisitInfo.filter(function(r){ return r.visit.isReturning; }).length;
+    document.getElementById("statReturning").textContent = withVisitInfo.length
+      ? Math.round((returningCount / withVisitInfo.length) * 100) + "%"
+      : "–";
+
+    const durations = visitRows.map(function(r){ return r.durationSec; }).filter(function(v){ return typeof v === "number"; });
+    document.getElementById("statAvgDuration").textContent = durations.length
+      ? Math.round((durations.reduce(function(a, b){ return a + b; }, 0) / durations.length / 6)) / 10 + " min"
+      : "–";
+
+    const loads = visitRows.map(function(r){ return r.performance && r.performance.loadMs; }).filter(function(v){ return typeof v === "number"; });
+    document.getElementById("statAvgLoad").textContent = loads.length
+      ? Math.round(loads.reduce(function(a, b){ return a + b; }, 0) / loads.length) + " ms"
+      : "–";
+
+    const days = [];
+    for(let i = 13; i >= 0; i--){
+      const d = new Date(startOfToday - i * 86400000);
+      days.push({ start: d.getTime(), end: d.getTime() + 86400000, label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: 0 });
+    }
+    visitRows.forEach(function(r){
+      const day = days.find(function(d){ return r.ts >= d.start && r.ts < d.end; });
+      if(day) day.value++;
+    });
+    const maxDay = Math.max.apply(null, days.map(function(d){ return d.value; })) || 1;
+    document.getElementById("chartVisitsPerDay").innerHTML = '<div class="vbars">' + days.map(function(d){
+      const pct = Math.max(2, Math.round((d.value / maxDay) * 100));
+      return '<div class="vbar">' +
+        '<div class="vbarValue">' + (d.value || "") + '</div>' +
+        '<div class="vbarFill" style="height:' + pct + '%;background:var(--navy)"></div>' +
+        '<div class="vbarLabel">' + esc(d.label) + '</div>' +
+      '</div>';
+    }).join("") + '</div>';
+
+    const deviceColors = { mobile: "#F97316", tablet: "#9333EA", desktop: "var(--navy)" };
+    const deviceEntries = topCounts(visitRows.map(function(r){ return r.device && r.device.type; }), 3)
+      .map(function(e){ return Object.assign({}, e, { label: e.label.charAt(0).toUpperCase() + e.label.slice(1) }); });
+    document.getElementById("chartDevices").innerHTML = barsHTML(deviceEntries, function(e){
+      return deviceColors[e.label.toLowerCase()] || "var(--navy)";
+    });
+
+    document.getElementById("chartLocations").innerHTML = barsHTML(
+      topCounts(visitRows.map(visitLocationStr), 5),
+      function(){ return "#0D9488"; }
+    );
+
+    document.getElementById("chartIsps").innerHTML = barsHTML(
+      topCounts(visitRows.map(function(r){ return r.isp; }), 5),
+      function(){ return "var(--navy)"; }
+    );
+  }
+
   function fetchVisitRows(){
     return db.ref("visitorLog").limitToLast(visitsQueryLimit).once("value").then(function(snap){
       const rows = [];
       snap.forEach(function(child){ rows.unshift(child.val()); });
       visitRows = rows;
+      populateVisitFilterOptions();
+      updateAnalyticsDashboard();
     }).catch(function(err){
-      document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Failed to load: ' + esc(err.message) + '</td></tr>';
+      document.getElementById("visitsBody").innerHTML = '<tr><td colspan="13" class="empty">Failed to load: ' + esc(err.message) + '</td></tr>';
     });
   }
 
