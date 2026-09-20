@@ -988,6 +988,78 @@
     100%{transform:scale(1) rotate(0deg);opacity:1}
   }
 
+  /* ---------- profile / account ---------- */
+  .profileWrap{position:relative}
+  .profileBtn{
+    width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;padding:0;box-shadow:var(--lift);flex:none;
+    transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+  }
+  .profileBtn:hover{border-color:#C6D0E0;transform:translateY(-1px)}
+  .profileBtn svg{width:20px;height:20px;stroke:var(--navy);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .profileBtn.signedIn{background:linear-gradient(150deg,#2A5CA6,var(--navy-deep));border-color:transparent}
+  .profileInitials{color:#fff;font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:.02em}
+  .profileMenu{
+    position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 10px 30px rgba(22,35,58,.18);padding:8px;z-index:80;
+  }
+  .profileMenu[hidden]{display:none}
+  .profileMenuEmail{padding:8px 10px;font-size:12.5px;color:var(--mute);border-bottom:1px solid var(--line-soft);margin-bottom:6px;word-break:break-all}
+  .profileMenuItem{
+    width:100%;text-align:left;background:none;border:none;border-radius:8px;
+    padding:9px 10px;font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+  }
+  .profileMenuItem:hover{background:var(--navy-tint);color:var(--navy)}
+
+  /* ---------- account sign-in / create-account modal ---------- */
+  .authOverlay{
+    position:fixed;inset:0;z-index:1000;background:rgba(16,24,40,.66);
+    backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .authOverlay[hidden]{display:none}
+  .authBox{
+    position:relative;background:var(--card);border-radius:16px;max-width:380px;width:100%;
+    padding:30px 28px 26px;box-shadow:0 20px 60px rgba(16,24,40,.4);text-align:left;
+    animation:ackIn .35s cubic-bezier(.2,.8,.3,1);
+  }
+  .authClose{
+    position:absolute;top:14px;right:14px;background:none;border:none;font-size:22px;line-height:1;
+    color:var(--mute);cursor:pointer;padding:0;width:28px;height:28px;
+  }
+  .authClose:hover{color:var(--ink)}
+  .authTabs{display:flex;gap:4px;background:var(--page);border-radius:10px;padding:4px;margin-bottom:20px}
+  .authTab{
+    flex:1;background:none;border:none;border-radius:7px;padding:8px;font-size:13px;font-weight:700;
+    color:var(--mute);cursor:pointer;transition:background .15s ease,color .15s ease;
+  }
+  .authTab.active{background:var(--card);color:var(--navy);box-shadow:0 1px 3px rgba(22,35,58,.12)}
+  .authBox h2{font-family:var(--serif);font-weight:700;font-size:1.3rem;margin:0 0 4px;color:var(--ink)}
+  .authSub{margin:0 0 20px;color:var(--mute);font-size:13px}
+  .authField{margin-bottom:13px}
+  .authField[hidden]{display:none}
+  .authField label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  .authField input{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+    font:inherit;font-size:14.5px;background:var(--page);transition:border-color .15s ease,box-shadow .15s ease;
+  }
+  .authField input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--navy-tint)}
+  .authGo{
+    width:100%;background:var(--navy);color:#fff;border:none;border-radius:9px;padding:12px;
+    font-size:14.5px;font-weight:600;cursor:pointer;margin-top:4px;
+    box-shadow:0 4px 14px rgba(27,75,143,.28);transition:background .15s ease,transform .15s ease;
+  }
+  .authGo:hover{background:var(--navy-deep);transform:translateY(-1px)}
+  .authGo:disabled{opacity:.6;cursor:default;transform:none}
+  .authErr{
+    color:#B3261E;background:#FDECEC;border:1px solid #F5C6C6;border-radius:8px;
+    padding:9px 12px;font-size:12.5px;margin-top:12px;display:none;
+  }
+  .authErr.show{display:block}
+  .authSwitch{width:100%;background:none;border:none;margin-top:16px;font-size:13px;color:var(--mute);cursor:pointer;text-align:center}
+  .authSwitch strong{color:var(--navy)}
+
   /* ---------- notice modal (slider of all active notices) ---------- */
   .noticeOverlay{
     position:fixed;inset:0;z-index:1000;
@@ -1167,6 +1239,35 @@
   </div>
 </div>
 
+<div class="authOverlay" id="authOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="authBox">
+    <button class="authClose" id="authClose" aria-label="Close">&times;</button>
+    <div class="authTabs">
+      <button type="button" class="authTab active" id="authTabSignIn">Sign in</button>
+      <button type="button" class="authTab" id="authTabSignUp">Create account</button>
+    </div>
+    <h2 id="authTitle">Sign in</h2>
+    <p class="authSub" id="authSub">Access your account.</p>
+    <form id="authForm">
+      <div class="authField" id="authNameField" hidden>
+        <label for="authName">Name</label>
+        <input type="text" id="authName" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="authField">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" required autocomplete="username">
+      </div>
+      <div class="authField">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" required autocomplete="current-password" minlength="6">
+      </div>
+      <button type="submit" class="authGo" id="authGo">Sign in</button>
+      <div class="authErr" id="authErr"></div>
+    </form>
+    <button type="button" class="authSwitch" id="authSwitch">New here? <strong>Create an account</strong></button>
+  </div>
+</div>
+
 <a class="livebar" id="livebar" hidden target="_blank" rel="noopener">
   <span class="lb-dot" aria-hidden="true"></span>
   <span class="lb-text" id="livebarText"></span>
@@ -1220,6 +1321,16 @@
         <span class="inst">Indian Institute of Management Kashipur</span>
         <span class="prog">Executive MBA · Batch 2026</span>
       </span>
+    </div>
+    <div class="profileWrap" id="profileWrap">
+      <button class="profileBtn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-label="Sign in or create account">
+        <span class="profileIcon" id="profileIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>
+        <span class="profileInitials" id="profileInitials" hidden></span>
+      </button>
+      <div class="profileMenu" id="profileMenu" hidden>
+        <div class="profileMenuEmail" id="profileMenuEmail"></div>
+        <button class="profileMenuItem" id="signOutBtn">Sign out</button>
+      </div>
     </div>
     </div>
 
@@ -1303,6 +1414,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script>
 /* ── live visitor count + total visits (Firebase Realtime Database) ──
@@ -1512,6 +1624,145 @@
       document.body.style.overflow = "";
       if(typeof window.playStandfirstTyping === "function") window.playStandfirstTyping();
     }, 650);
+  });
+})();
+
+/* ---------- account (sign in / create account, Firebase Auth) ---------- */
+(function(){
+  if(typeof firebase === "undefined" || !firebase.apps || !firebase.apps.length) return;
+  const auth = firebase.auth();
+
+  const profileWrap = document.getElementById("profileWrap");
+  const profileBtn = document.getElementById("profileBtn");
+  const profileIcon = document.getElementById("profileIcon");
+  const profileInitials = document.getElementById("profileInitials");
+  const profileMenu = document.getElementById("profileMenu");
+  const profileMenuEmail = document.getElementById("profileMenuEmail");
+  const signOutBtn = document.getElementById("signOutBtn");
+
+  const authOverlay = document.getElementById("authOverlay");
+  const authClose = document.getElementById("authClose");
+  const authTabSignIn = document.getElementById("authTabSignIn");
+  const authTabSignUp = document.getElementById("authTabSignUp");
+  const authTitle = document.getElementById("authTitle");
+  const authSub = document.getElementById("authSub");
+  const authForm = document.getElementById("authForm");
+  const authNameField = document.getElementById("authNameField");
+  const authName = document.getElementById("authName");
+  const authEmail = document.getElementById("authEmail");
+  const authPassword = document.getElementById("authPassword");
+  const authGo = document.getElementById("authGo");
+  const authErr = document.getElementById("authErr");
+  const authSwitch = document.getElementById("authSwitch");
+
+  let mode = "signin";
+
+  function setMode(m){
+    mode = m;
+    authTabSignIn.classList.toggle("active", m === "signin");
+    authTabSignUp.classList.toggle("active", m === "signup");
+    authNameField.hidden = m !== "signup";
+    authTitle.textContent = m === "signin" ? "Sign in" : "Create account";
+    authSub.textContent = m === "signin" ? "Access your account." : "Set up your account for this site.";
+    authGo.textContent = m === "signin" ? "Sign in" : "Create account";
+    authSwitch.innerHTML = m === "signin"
+      ? 'New here? <strong>Create an account</strong>'
+      : 'Already have an account? <strong>Sign in</strong>';
+    authPassword.autocomplete = m === "signin" ? "current-password" : "new-password";
+    authErr.classList.remove("show");
+  }
+
+  function openAuth(m){
+    setMode(m || "signin");
+    authOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(function(){ authEmail.focus(); }, 0);
+  }
+  function closeAuth(){
+    authOverlay.hidden = true;
+    document.body.style.overflow = "";
+    authForm.reset();
+    authErr.classList.remove("show");
+  }
+
+  profileBtn.addEventListener("click", function(){
+    if(auth.currentUser){
+      const willShow = profileMenu.hidden;
+      profileMenu.hidden = !willShow;
+      profileBtn.setAttribute("aria-expanded", String(willShow));
+    } else {
+      openAuth("signin");
+    }
+  });
+  document.addEventListener("click", function(e){
+    if(!profileWrap.contains(e.target)) profileMenu.hidden = true;
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Escape") return;
+    profileMenu.hidden = true;
+    if(!authOverlay.hidden) closeAuth();
+  });
+
+  authClose.addEventListener("click", closeAuth);
+  authOverlay.addEventListener("click", function(e){ if(e.target === authOverlay) closeAuth(); });
+  authTabSignIn.addEventListener("click", function(){ setMode("signin"); });
+  authTabSignUp.addEventListener("click", function(){ setMode("signup"); });
+  authSwitch.addEventListener("click", function(){ setMode(mode === "signin" ? "signup" : "signin"); });
+
+  authForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    authErr.classList.remove("show");
+    authGo.disabled = true;
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    const name = authName.value.trim();
+
+    const action = mode === "signin"
+      ? auth.signInWithEmailAndPassword(email, password)
+      : auth.createUserWithEmailAndPassword(email, password).then(function(cred){
+          if(name && cred.user) return cred.user.updateProfile({ displayName: name });
+        });
+
+    action.then(function(){
+      closeAuth();
+    }).catch(function(err){
+      const messages = {
+        "auth/invalid-credential": "Incorrect email or password.",
+        "auth/wrong-password": "Incorrect email or password.",
+        "auth/user-not-found": "No account found with that email.",
+        "auth/email-already-in-use": "An account already exists with that email.",
+        "auth/weak-password": "Password should be at least 6 characters.",
+        "auth/invalid-email": "Enter a valid email address."
+      };
+      authErr.textContent = messages[err.code] || ("Something went wrong: " + err.message);
+      authErr.classList.add("show");
+    }).finally(function(){
+      authGo.disabled = false;
+    });
+  });
+
+  signOutBtn.addEventListener("click", function(){
+    auth.signOut();
+    profileMenu.hidden = true;
+  });
+
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      profileBtn.classList.add("signedIn");
+      profileIcon.hidden = true;
+      const label = (user.displayName || user.email || "?").trim();
+      const initials = label.split(/\s+/).map(function(w){ return w[0]; }).slice(0, 2).join("").toUpperCase();
+      profileInitials.textContent = initials || "?";
+      profileInitials.hidden = false;
+      profileMenuEmail.textContent = user.email || "";
+      profileBtn.setAttribute("aria-label", "Account: " + (user.displayName || user.email));
+    } else {
+      profileBtn.classList.remove("signedIn");
+      profileIcon.hidden = false;
+      profileInitials.hidden = true;
+      profileMenu.hidden = true;
+      profileBtn.setAttribute("aria-label", "Sign in or create account");
+    }
   });
 })();
 </script>
