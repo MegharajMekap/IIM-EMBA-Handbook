@@ -208,6 +208,18 @@
   td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-soft)}
   tbody tr:last-child td{border-bottom:none}
   tbody tr:hover td{background:var(--navy-tint)}
+  .filterRow th{background:var(--card);padding:7px 10px;border-bottom:1px solid var(--line)}
+  .filterInput{
+    width:100%;min-width:90px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;
+    font:inherit;font-size:12px;font-weight:500;text-transform:none;letter-spacing:normal;
+    color:var(--ink);background:var(--page);
+  }
+  .filterInput:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 2px var(--navy-tint)}
+  .clearFilters{
+    background:none;border:none;color:var(--navy);font-size:12.5px;font-weight:600;
+    cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:2px;
+  }
+  .clearFilters[hidden]{display:none}
   .tag{
     display:inline-block;background:var(--navy-tint);color:var(--navy);border-radius:5px;
     padding:2px 8px;font-size:11px;font-weight:700;margin:1px 3px 1px 0;
@@ -336,10 +348,31 @@
         <div class="sectionHead">
           <h2><span class="dot" style="background:#9333EA"></span>PWA installs</h2>
         </div>
-        <p class="sectionNote">Most recent first · 5 per page.</p>
+        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="installsClearFilters" hidden>Clear filters</button></div>
         <div class="tableWrap">
           <table>
-            <thead><tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr></thead>
+            <thead>
+              <tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr>
+              <tr class="filterRow">
+                <th><input type="text" class="filterInput" id="fInstTime" placeholder="Filter…"></th>
+                <th>
+                  <select class="filterInput" id="fInstKind">
+                    <option value="">All</option>
+                    <option value="installed">Installed</option>
+                    <option value="launched-standalone">Launched standalone</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fInstPlatform">
+                    <option value="">All</option>
+                    <option value="android">Android</option>
+                    <option value="ios">iOS</option>
+                    <option value="other">Other</option>
+                  </select>
+                </th>
+                <th><input type="text" class="filterInput" id="fInstUA" placeholder="Filter…"></th>
+              </tr>
+            </thead>
             <tbody id="installsBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
           </table>
           <div class="pagination" id="installsPager"></div>
@@ -350,7 +383,7 @@
         <div class="sectionHead">
           <h2><span class="dot" style="background:#F97316"></span>Visitor log</h2>
         </div>
-        <p class="sectionNote">Most recent first · 5 per page.</p>
+        <div class="sectionHead"><p class="sectionNote">Most recent first · 5 per page.</p><button class="clearFilters" id="visitsClearFilters" hidden>Clear filters</button></div>
         <div class="tableWrap">
           <table>
             <thead>
@@ -358,6 +391,39 @@
                 <th>Time</th><th>Location</th><th>ISP</th><th>Device</th><th>Return visit</th>
                 <th>Duration</th><th>Tabs</th><th>Search</th><th>Subjects</th>
                 <th>Recordings opened</th><th>Notes opened</th><th>Load time</th>
+              </tr>
+              <tr class="filterRow">
+                <th><input type="text" class="filterInput" id="fVisTime" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisLocation" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisIsp" placeholder="Filter…"></th>
+                <th>
+                  <select class="filterInput" id="fVisDevice">
+                    <option value="">All</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="desktop">Desktop</option>
+                  </select>
+                </th>
+                <th>
+                  <select class="filterInput" id="fVisReturn">
+                    <option value="">All</option>
+                    <option value="new">New</option>
+                    <option value="returning">Returning</option>
+                  </select>
+                </th>
+                <th><input type="text" class="filterInput" id="fVisDuration" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisTabs" placeholder="Filter…"></th>
+                <th>
+                  <select class="filterInput" id="fVisSearch">
+                    <option value="">All</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </th>
+                <th><input type="text" class="filterInput" id="fVisSubjects" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisRecordings" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisNotes" placeholder="Filter…"></th>
+                <th><input type="text" class="filterInput" id="fVisLoad" placeholder="Filter…"></th>
               </tr>
             </thead>
             <tbody id="visitsBody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
@@ -476,6 +542,9 @@ function stopDashboard(){
   document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Loading…</td></tr>';
   document.getElementById("installsPager").innerHTML = "";
   document.getElementById("visitsPager").innerHTML = "";
+  document.getElementById("installsClearFilters").hidden = true;
+  document.getElementById("visitsClearFilters").hidden = true;
+  [].forEach.call(document.querySelectorAll(".filterInput"), function(el){ el.value = ""; });
   ["statOnline","statTotal","statInstalls","statLogged"].forEach(function(id){
     document.getElementById(id).textContent = "–";
   });
@@ -669,6 +738,19 @@ function startAuditLog(){
   });
 }
 
+function wireFilterInput(id, filters, key, isSelect, onChange){
+  const el = document.getElementById(id);
+  let timer = null;
+  el.addEventListener(isSelect ? "change" : "input", function(){
+    filters[key] = el.value.trim().toLowerCase();
+    if(isSelect){ onChange(); }
+    else {
+      clearTimeout(timer);
+      timer = setTimeout(onChange, 150);
+    }
+  });
+}
+
 function startAnalytics(){
   trackListener(db.ref("presence"), function(snap){
     document.getElementById("statOnline").textContent = snap.numChildren();
@@ -681,20 +763,31 @@ function startAnalytics(){
   const INSTALLS_PAGE_SIZE = 5;
   let installRows = [];
   let installsPage = 1;
+  const installFilters = { time: "", kind: "", platform: "", userAgent: "" };
+
+  function installMatchesFilters(r){
+    if(installFilters.time && !fmtTime(r.ts).toLowerCase().includes(installFilters.time)) return false;
+    if(installFilters.kind && r.kind !== installFilters.kind) return false;
+    if(installFilters.platform && r.platform !== installFilters.platform) return false;
+    if(installFilters.userAgent && !(r.userAgent || "").toLowerCase().includes(installFilters.userAgent)) return false;
+    return true;
+  }
 
   function renderInstallsPage(){
     const body = document.getElementById("installsBody");
     const pager = document.getElementById("installsPager");
-    if(!installRows.length){
-      body.innerHTML = '<tr><td colspan="4" class="empty">No installs logged yet.</td></tr>';
+    const filtered = installRows.filter(installMatchesFilters);
+    document.getElementById("installsClearFilters").hidden = !Object.keys(installFilters).some(function(k){ return installFilters[k]; });
+    if(!filtered.length){
+      body.innerHTML = '<tr><td colspan="4" class="empty">' + (installRows.length ? "No installs match these filters." : "No installs logged yet.") + '</td></tr>';
       pager.innerHTML = "";
       return;
     }
-    const totalPages = Math.max(1, Math.ceil(installRows.length / INSTALLS_PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(filtered.length / INSTALLS_PAGE_SIZE));
     if(installsPage > totalPages) installsPage = totalPages;
     if(installsPage < 1) installsPage = 1;
     const start = (installsPage - 1) * INSTALLS_PAGE_SIZE;
-    const pageRows = installRows.slice(start, start + INSTALLS_PAGE_SIZE);
+    const pageRows = filtered.slice(start, start + INSTALLS_PAGE_SIZE);
     body.innerHTML = pageRows.map(function(r){
       return "<tr><td>" + esc(fmtTime(r.ts)) + "</td><td>" + esc(r.kind) + "</td><td>" + devPill(r.platform) + "</td><td class=\"muted\">" + esc(r.userAgent) + "</td></tr>";
     }).join("");
@@ -706,6 +799,21 @@ function startAnalytics(){
       });
     });
   }
+
+  ["fInstTime", "fInstUA"].forEach(function(id){
+    wireFilterInput(id, installFilters, id === "fInstTime" ? "time" : "userAgent", false, function(){
+      installsPage = 1;
+      renderInstallsPage();
+    });
+  });
+  wireFilterInput("fInstKind", installFilters, "kind", true, function(){ installsPage = 1; renderInstallsPage(); });
+  wireFilterInput("fInstPlatform", installFilters, "platform", true, function(){ installsPage = 1; renderInstallsPage(); });
+  document.getElementById("installsClearFilters").addEventListener("click", function(){
+    Object.keys(installFilters).forEach(function(k){ installFilters[k] = ""; });
+    ["fInstTime", "fInstKind", "fInstPlatform", "fInstUA"].forEach(function(id){ document.getElementById(id).value = ""; });
+    installsPage = 1;
+    renderInstallsPage();
+  });
 
   trackListener(db.ref("pwaInstalls").limitToLast(100), function(snap){
     const rows = [];
@@ -720,21 +828,63 @@ function startAnalytics(){
   let visitsQueryLimit = 100;
   let visitRows = [];
   let visitsPage = 1;
+  const visitFilters = {
+    time: "", location: "", isp: "", device: "", returnVisit: "",
+    duration: "", tabs: "", search: "", subjects: "", recordings: "", notes: "", load: ""
+  };
+
+  function visitMatchesFilters(r){
+    const f = visitFilters;
+    if(f.time && !fmtTime(r.ts).toLowerCase().includes(f.time)) return false;
+    const locationStr = ([r.city, r.region, r.country].filter(Boolean).join(", ") + " " + (r.ip || "")).toLowerCase();
+    if(f.location && !locationStr.includes(f.location)) return false;
+    if(f.isp && !(r.isp || "").toLowerCase().includes(f.isp)) return false;
+    if(f.device && (!r.device || r.device.type !== f.device)) return false;
+    if(f.returnVisit){
+      const isReturning = !!(r.visit && r.visit.isReturning);
+      if(f.returnVisit === "returning" && !isReturning) return false;
+      if(f.returnVisit === "new" && isReturning) return false;
+    }
+    const durationStr = (typeof r.durationSec === "number" ? (Math.round(r.durationSec / 6) / 10 + " min") : "").toLowerCase();
+    if(f.duration && !durationStr.includes(f.duration)) return false;
+    const tabsStr = (r.tabsVisited || []).join(" ").toLowerCase();
+    if(f.tabs && !tabsStr.includes(f.tabs)) return false;
+    if(f.search){
+      const used = !!r.searchUsed;
+      if(f.search === "yes" && !used) return false;
+      if(f.search === "no" && used) return false;
+    }
+    const subjectsStr = (r.subjectFilters || []).join(" ").toLowerCase();
+    if(f.subjects && !subjectsStr.includes(f.subjects)) return false;
+    const recordingsStr = (r.recordingsOpened || []).join(" ").toLowerCase();
+    if(f.recordings && !recordingsStr.includes(f.recordings)) return false;
+    const notesStr = (r.notesOpened || []).join(" ").toLowerCase();
+    if(f.notes && !notesStr.includes(f.notes)) return false;
+    const loadStr = ((r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : "").toLowerCase();
+    if(f.load && !loadStr.includes(f.load)) return false;
+    return true;
+  }
+
+  function getFilteredVisitRows(){
+    return visitRows.filter(visitMatchesFilters);
+  }
 
   function renderVisitsPage(){
     const body = document.getElementById("visitsBody");
     const pager = document.getElementById("visitsPager");
     document.getElementById("statLogged").textContent = visitRows.length;
-    if(!visitRows.length){
-      body.innerHTML = '<tr><td colspan="12" class="empty">No visits logged yet.</td></tr>';
+    document.getElementById("visitsClearFilters").hidden = !Object.keys(visitFilters).some(function(k){ return visitFilters[k]; });
+    const filtered = getFilteredVisitRows();
+    if(!filtered.length){
+      body.innerHTML = '<tr><td colspan="12" class="empty">' + (visitRows.length ? "No visits match these filters." : "No visits logged yet.") + '</td></tr>';
       pager.innerHTML = "";
       return;
     }
-    const totalPages = Math.max(1, Math.ceil(visitRows.length / VISITS_PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(filtered.length / VISITS_PAGE_SIZE));
     if(visitsPage > totalPages) visitsPage = totalPages;
     if(visitsPage < 1) visitsPage = 1;
     const start = (visitsPage - 1) * VISITS_PAGE_SIZE;
-    const pageRows = visitRows.slice(start, start + VISITS_PAGE_SIZE);
+    const pageRows = filtered.slice(start, start + VISITS_PAGE_SIZE);
     body.innerHTML = pageRows.map(function(r){
       const loc = [r.city, r.region, r.country].filter(Boolean).join(", ") || '<span class="muted">–</span>';
       const dev = r.device ? (devPill(r.device.type) + ' <span class="mono">' + esc(r.device.viewport || "?") + '</span>' + (r.device.pwa ? ' <span class="tag">PWA</span>' : "")) : '<span class="muted">–</span>';
@@ -762,23 +912,45 @@ function startAnalytics(){
     });
   }
 
-  function loadVisits(){
+  const visitFilterFieldMap = {
+    fVisTime: "time", fVisLocation: "location", fVisIsp: "isp", fVisDevice: "device",
+    fVisReturn: "returnVisit", fVisDuration: "duration", fVisTabs: "tabs", fVisSearch: "search",
+    fVisSubjects: "subjects", fVisRecordings: "recordings", fVisNotes: "notes", fVisLoad: "load"
+  };
+  const visitSelectIds = { fVisDevice: true, fVisReturn: true, fVisSearch: true };
+  Object.keys(visitFilterFieldMap).forEach(function(id){
+    wireFilterInput(id, visitFilters, visitFilterFieldMap[id], !!visitSelectIds[id], function(){
+      visitsPage = 1;
+      renderVisitsPage();
+    });
+  });
+  document.getElementById("visitsClearFilters").addEventListener("click", function(){
+    Object.keys(visitFilters).forEach(function(k){ visitFilters[k] = ""; });
+    Object.keys(visitFilterFieldMap).forEach(function(id){ document.getElementById(id).value = ""; });
+    visitsPage = 1;
+    renderVisitsPage();
+  });
+
+  function fetchVisitRows(){
     return db.ref("visitorLog").limitToLast(visitsQueryLimit).once("value").then(function(snap){
       const rows = [];
       snap.forEach(function(child){ rows.unshift(child.val()); });
       visitRows = rows;
-      renderVisitsPage();
     }).catch(function(err){
       document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Failed to load: ' + esc(err.message) + '</td></tr>';
     });
   }
 
+  function loadVisits(){
+    return fetchVisitRows().then(renderVisitsPage);
+  }
+
   function goToVisitsPage(p){
-    const loadedPages = Math.ceil(visitRows.length / VISITS_PAGE_SIZE);
+    const totalPages = Math.max(1, Math.ceil(getFilteredVisitRows().length / VISITS_PAGE_SIZE));
     const moreMightExist = visitRows.length === visitsQueryLimit;
-    if(p > loadedPages && moreMightExist){
+    if(p > totalPages && moreMightExist){
       visitsQueryLimit += 100;
-      loadVisits().then(function(){ goToVisitsPage(p); });
+      fetchVisitRows().then(function(){ goToVisitsPage(p); });
       return;
     }
     visitsPage = p;
