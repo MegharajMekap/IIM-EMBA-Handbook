@@ -199,6 +199,7 @@
     padding:2px 8px;font-size:11px;font-weight:700;margin:1px 3px 1px 0;
   }
   .tag.new{background:#E8F5EC;color:#1E8A4C}
+  .tag.del{background:#FDECEC;color:#B3261E}
   .devPill{
     display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
     padding:2px 8px;border-radius:999px;text-transform:capitalize;
@@ -290,6 +291,14 @@
     </div>
 
     <div id="superOnlySections" hidden>
+      <div class="section">
+        <div class="sectionHead">
+          <h2><span class="dot" style="background:#1E8A4C"></span>Admin activity</h2>
+        </div>
+        <p class="sectionNote">Every announcement added, deleted, or restored, by whichever admin made the change. "Remove"/"Restore" undoes that specific action.</p>
+        <div class="annList" id="auditList"><div class="empty">Loading…</div></div>
+      </div>
+
       <div class="section">
         <div class="sectionHead">
           <h2><span class="dot" style="background:#9333EA"></span>PWA installs</h2>
@@ -408,7 +417,19 @@ function startDashboard(isSuper){
   document.getElementById("superOnlySections").hidden = !isSuper;
 
   startAnnouncements();
-  if(isSuper) startAnalytics();
+  if(isSuper){ startAnalytics(); startAuditLog(); }
+}
+
+function currentActor(){
+  const u = auth.currentUser;
+  return { uid: u ? u.uid : null, email: u ? u.email : null };
+}
+
+function logAudit(entry){
+  db.ref("auditLog").push(Object.assign({
+    by: currentActor(),
+    ts: firebase.database.ServerValue.TIMESTAMP
+  }, entry)).catch(function(){});
 }
 
 function startAnnouncements(){
@@ -425,12 +446,15 @@ function startAnnouncements(){
     const isNew = document.getElementById("annIsNew").checked;
     annSubmit.disabled = true;
     annMsg.className = "annMsg";
-    db.ref("announcements").push({
+    const payload = {
       text: text,
       expires: expiresLocal ? new Date(expiresLocal).toISOString() : null,
       isNew: isNew,
+      createdBy: currentActor(),
       ts: firebase.database.ServerValue.TIMESTAMP
-    }).then(function(){
+    };
+    db.ref("announcements").push(payload).then(function(ref){
+      logAudit({ action: "add", annKey: ref.key, text: payload.text, expires: payload.expires, isNew: payload.isNew });
       annForm.reset();
       document.getElementById("annIsNew").checked = true;
       annMsg.textContent = "Announcement added — now live on the site.";
@@ -458,6 +482,7 @@ function startAnnouncements(){
       if(v.expires) meta.push((expired ? "Expired " : "Expires ") + new Date(v.expires).toLocaleString(undefined, { dateStyle:"medium", timeStyle:"short" }));
       else meta.push("No expiry");
       if(v.isNew) meta.push('<span class="tag new">New badge</span>');
+      if(v.createdBy && v.createdBy.email) meta.push("Added by " + esc(v.createdBy.email));
       return '<div class="annCard"' + (expired ? ' style="opacity:.55"' : '') + '>' +
         '<div class="txt"><p>' + esc(v.text) + '</p><div class="meta">' + meta.join(" · ") + '</div></div>' +
         '<button class="annDel" data-key="' + esc(r.key) + '">Delete</button>' +
@@ -466,7 +491,62 @@ function startAnnouncements(){
     [].forEach.call(list.querySelectorAll(".annDel"), function(btn){
       btn.addEventListener("click", function(){
         if(!confirm("Delete this announcement?")) return;
-        db.ref("announcements/" + btn.dataset.key).remove();
+        const key = btn.dataset.key;
+        db.ref("announcements/" + key).once("value").then(function(snap){
+          const v = snap.val() || {};
+          db.ref("announcements/" + key).remove().then(function(){
+            logAudit({ action: "delete", annKey: key, text: v.text, expires: v.expires || null, isNew: !!v.isNew });
+          });
+        });
+      });
+    });
+  });
+}
+
+function startAuditLog(){
+  const list = document.getElementById("auditList");
+  db.ref("auditLog").limitToLast(150).on("value", function(snap){
+    const rows = [];
+    snap.forEach(function(child){ rows.unshift({ key: child.key, val: child.val() }); });
+    if(!rows.length){
+      list.innerHTML = '<div class="empty">No admin activity logged yet.</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(r){
+      const v = r.val;
+      const who = (v.by && v.by.email) || "Unknown";
+      const actionLabel = v.action === "add" ? '<span class="tag new">Added</span>'
+        : v.action === "delete" ? '<span class="tag del">Deleted</span>'
+        : '<span class="tag">Restored</span>';
+      const canRevert = v.action === "add" || v.action === "delete";
+      const revertLabel = v.action === "add" ? "Remove" : "Restore";
+      return '<div class="annCard">' +
+        '<div class="txt"><p>' + actionLabel + ' <strong>' + esc(v.text) + '</strong></p>' +
+        '<div class="meta">' + esc(who) + ' · ' + esc(fmtTime(v.ts)) + '</div></div>' +
+        (canRevert ? '<button class="annDel" data-audit-key="' + esc(r.key) + '">' + revertLabel + '</button>' : '') +
+      '</div>';
+    }).join("");
+    [].forEach.call(list.querySelectorAll("[data-audit-key]"), function(btn){
+      btn.addEventListener("click", function(){
+        const key = btn.dataset.auditKey;
+        db.ref("auditLog/" + key).once("value").then(function(snap){
+          const v = snap.val();
+          if(!v) return;
+          if(v.action === "delete"){
+            if(!confirm('Restore "' + v.text + '"?')) return;
+            db.ref("announcements").push({
+              text: v.text, expires: v.expires || null, isNew: !!v.isNew,
+              createdBy: currentActor(), ts: firebase.database.ServerValue.TIMESTAMP
+            }).then(function(ref){
+              logAudit({ action: "restore", annKey: ref.key, text: v.text, expires: v.expires || null, isNew: !!v.isNew });
+            });
+          } else if(v.action === "add"){
+            if(!confirm('Remove "' + v.text + '"? (undoes this addition)')) return;
+            db.ref("announcements/" + v.annKey).remove().then(function(){
+              logAudit({ action: "delete", annKey: v.annKey, text: v.text, expires: v.expires || null, isNew: !!v.isNew });
+            });
+          }
+        });
       });
     });
   });
