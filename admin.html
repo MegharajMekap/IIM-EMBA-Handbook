@@ -39,6 +39,13 @@
 
   /* ---------- login ---------- */
   #loginWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .loginOuter{width:100%;max-width:380px}
+  .backLink{
+    display:inline-flex;align-items:center;gap:6px;color:var(--mute);text-decoration:none;
+    font-size:13px;font-weight:600;margin-bottom:14px;transition:color .15s ease;
+  }
+  .backLink:hover{color:var(--navy)}
+  .backLink svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
   .loginBox{
     width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);
     border-radius:18px;padding:34px 32px;box-shadow:var(--lift);position:relative;overflow:hidden;
@@ -202,9 +209,11 @@
 
 <div class="wrap">
   <div id="loginWrap">
-    <div class="loginBox">
-      <div class="loginIcon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3.5v5c0 4.5-3 7.5-7 9.5-4-2-7-5-7-9.5v-5z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg></div>
-      <h2>Admin sign-in</h2>
+    <div class="loginOuter">
+      <a href="index.html" class="backLink"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Back to site</a>
+      <div class="loginBox">
+        <div class="loginIcon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3.5v5c0 4.5-3 7.5-7 9.5-4-2-7-5-7-9.5v-5z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg></div>
+        <h2>Admin sign-in</h2>
       <p>Site traffic, device, and engagement data — visible only to the site maintainer.</p>
       <form id="loginForm">
         <div class="field">
@@ -218,6 +227,7 @@
         <button type="submit" class="loginGo" id="loginBtn">Sign in</button>
         <div class="loginErr" id="loginErr"></div>
       </form>
+      </div>
     </div>
   </div>
 
