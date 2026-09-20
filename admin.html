@@ -183,6 +183,20 @@
   }
   .annDel:hover{background:#FDECEC;border-color:#F5C6C6}
 
+  /* ---------- pagination ---------- */
+  .pagination{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:14px}
+  .pageBtn{
+    min-width:32px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:7px;
+    background:var(--card);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,color .15s ease;
+  }
+  .pageBtn:hover:not(:disabled){background:var(--navy-tint);border-color:#C6D0E0;color:var(--navy)}
+  .pageBtn.active{background:var(--navy);border-color:var(--navy);color:#fff;cursor:default}
+  .pageBtn:disabled{opacity:.4;cursor:default}
+  .pageEllipsis{color:var(--mute);font-size:13px;padding:0 2px}
+  .tableWrap .pagination{padding:14px;border-top:1px solid var(--line);margin-top:0}
+  .tableWrap .pagination:empty{display:none}
+
   /* ---------- tables ---------- */
   .tableWrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--lift)}
   table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
@@ -210,11 +224,6 @@
   .muted{color:var(--mute)}
   .mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   .empty{padding:34px 20px;text-align:center;color:var(--mute);font-size:13.5px}
-  .loadMore{
-    display:block;width:100%;background:var(--page);border:none;border-top:1px solid var(--line);
-    padding:13px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-radius:0 0 14px 14px;
-  }
-  .loadMore:hover{background:var(--navy-tint)}
 
   /* ---------- floating refresh button ---------- */
   .pwa-refresh{
@@ -327,12 +336,13 @@
         <div class="sectionHead">
           <h2><span class="dot" style="background:#9333EA"></span>PWA installs</h2>
         </div>
-        <p class="sectionNote">Most recent first.</p>
+        <p class="sectionNote">Most recent first · 5 per page.</p>
         <div class="tableWrap">
           <table>
             <thead><tr><th>Time</th><th>Kind</th><th>Platform</th><th>User agent</th></tr></thead>
             <tbody id="installsBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
           </table>
+          <div class="pagination" id="installsPager"></div>
         </div>
       </div>
 
@@ -340,7 +350,7 @@
         <div class="sectionHead">
           <h2><span class="dot" style="background:#F97316"></span>Visitor log</h2>
         </div>
-        <p class="sectionNote">Most recent first · loads 100 at a time.</p>
+        <p class="sectionNote">Most recent first · 5 per page.</p>
         <div class="tableWrap">
           <table>
             <thead>
@@ -352,7 +362,7 @@
             </thead>
             <tbody id="visitsBody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
           </table>
-          <button class="loadMore" id="loadMoreBtn" hidden>Load 100 more</button>
+          <div class="pagination" id="visitsPager"></div>
         </div>
       </div>
     </div>
@@ -464,10 +474,11 @@ function stopDashboard(){
   document.getElementById("auditList").innerHTML = '<div class="empty">Loading…</div>';
   document.getElementById("installsBody").innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
   document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Loading…</td></tr>';
+  document.getElementById("installsPager").innerHTML = "";
+  document.getElementById("visitsPager").innerHTML = "";
   ["statOnline","statTotal","statInstalls","statLogged"].forEach(function(id){
     document.getElementById(id).textContent = "–";
   });
-  document.getElementById("loadMoreBtn").hidden = true;
 }
 
 /* ---------- dashboard data ---------- */
@@ -567,16 +578,43 @@ function startAnnouncements(){
   });
 }
 
+function paginationHTML(current, total){
+  if(total <= 1) return "";
+  const keep = new Set([1, total, current]);
+  if(current - 1 >= 1) keep.add(current - 1);
+  if(current + 1 <= total) keep.add(current + 1);
+  const pages = Array.from(keep).sort(function(a, b){ return a - b; });
+  let html = '<div class="pagination">';
+  html += '<button class="pageBtn" data-page="' + (current - 1) + '"' + (current === 1 ? " disabled" : "") + '>Back</button>';
+  let prev = 0;
+  pages.forEach(function(p){
+    if(prev && p - prev > 1) html += '<span class="pageEllipsis">…</span>';
+    html += '<button class="pageBtn' + (p === current ? " active" : "") + '" data-page="' + p + '">' + p + '</button>';
+    prev = p;
+  });
+  html += '<button class="pageBtn" data-page="' + (current + 1) + '"' + (current === total ? " disabled" : "") + '>Next</button>';
+  html += '</div>';
+  return html;
+}
+
 function startAuditLog(){
   const list = document.getElementById("auditList");
-  trackListener(db.ref("auditLog").limitToLast(150), function(snap){
-    const rows = [];
-    snap.forEach(function(child){ rows.unshift({ key: child.key, val: child.val() }); });
-    if(!rows.length){
+  const PAGE_SIZE = 5;
+  let auditRows = [];
+  let auditPage = 1;
+
+  function renderAuditPage(){
+    if(!auditRows.length){
       list.innerHTML = '<div class="empty">No admin activity logged yet.</div>';
       return;
     }
-    list.innerHTML = rows.map(function(r){
+    const totalPages = Math.max(1, Math.ceil(auditRows.length / PAGE_SIZE));
+    if(auditPage > totalPages) auditPage = totalPages;
+    if(auditPage < 1) auditPage = 1;
+    const start = (auditPage - 1) * PAGE_SIZE;
+    const pageRows = auditRows.slice(start, start + PAGE_SIZE);
+
+    list.innerHTML = pageRows.map(function(r){
       const v = r.val;
       const who = (v.by && v.by.email) || "Unknown";
       const actionLabel = v.action === "add" ? '<span class="tag new">Added</span>'
@@ -589,7 +627,8 @@ function startAuditLog(){
         '<div class="meta">' + esc(who) + ' · ' + esc(fmtTime(v.ts)) + '</div></div>' +
         (canRevert ? '<button class="annDel" data-audit-key="' + esc(r.key) + '">' + revertLabel + '</button>' : '') +
       '</div>';
-    }).join("");
+    }).join("") + paginationHTML(auditPage, totalPages);
+
     [].forEach.call(list.querySelectorAll("[data-audit-key]"), function(btn){
       btn.addEventListener("click", function(){
         const key = btn.dataset.auditKey;
@@ -613,6 +652,20 @@ function startAuditLog(){
         });
       });
     });
+
+    [].forEach.call(list.querySelectorAll(".pageBtn:not([disabled])"), function(btn){
+      btn.addEventListener("click", function(){
+        auditPage = parseInt(btn.dataset.page, 10);
+        renderAuditPage();
+      });
+    });
+  }
+
+  trackListener(db.ref("auditLog").limitToLast(150), function(snap){
+    const rows = [];
+    snap.forEach(function(child){ rows.unshift({ key: child.key, val: child.val() }); });
+    auditRows = rows;
+    renderAuditPage();
   });
 }
 
@@ -625,64 +678,117 @@ function startAnalytics(){
   });
 
   /* ---- PWA installs ---- */
+  const INSTALLS_PAGE_SIZE = 5;
+  let installRows = [];
+  let installsPage = 1;
+
+  function renderInstallsPage(){
+    const body = document.getElementById("installsBody");
+    const pager = document.getElementById("installsPager");
+    if(!installRows.length){
+      body.innerHTML = '<tr><td colspan="4" class="empty">No installs logged yet.</td></tr>';
+      pager.innerHTML = "";
+      return;
+    }
+    const totalPages = Math.max(1, Math.ceil(installRows.length / INSTALLS_PAGE_SIZE));
+    if(installsPage > totalPages) installsPage = totalPages;
+    if(installsPage < 1) installsPage = 1;
+    const start = (installsPage - 1) * INSTALLS_PAGE_SIZE;
+    const pageRows = installRows.slice(start, start + INSTALLS_PAGE_SIZE);
+    body.innerHTML = pageRows.map(function(r){
+      return "<tr><td>" + esc(fmtTime(r.ts)) + "</td><td>" + esc(r.kind) + "</td><td>" + devPill(r.platform) + "</td><td class=\"muted\">" + esc(r.userAgent) + "</td></tr>";
+    }).join("");
+    pager.innerHTML = paginationHTML(installsPage, totalPages);
+    [].forEach.call(pager.querySelectorAll(".pageBtn:not([disabled])"), function(btn){
+      btn.addEventListener("click", function(){
+        installsPage = parseInt(btn.dataset.page, 10);
+        renderInstallsPage();
+      });
+    });
+  }
+
   trackListener(db.ref("pwaInstalls").limitToLast(100), function(snap){
     const rows = [];
     snap.forEach(function(child){ rows.unshift(child.val()); });
+    installRows = rows;
     document.getElementById("statInstalls").textContent = rows.length;
-    const body = document.getElementById("installsBody");
-    if(!rows.length){
-      body.innerHTML = '<tr><td colspan="4" class="empty">No installs logged yet.</td></tr>';
-      return;
-    }
-    body.innerHTML = rows.map(function(r){
-      return "<tr><td>" + esc(fmtTime(r.ts)) + "</td><td>" + esc(r.kind) + "</td><td>" + devPill(r.platform) + "</td><td class=\"muted\">" + esc(r.userAgent) + "</td></tr>";
-    }).join("");
+    renderInstallsPage();
   });
 
   /* ---- visitor log ---- */
+  const VISITS_PAGE_SIZE = 5;
   let visitsQueryLimit = 100;
+  let visitRows = [];
+  let visitsPage = 1;
+
+  function renderVisitsPage(){
+    const body = document.getElementById("visitsBody");
+    const pager = document.getElementById("visitsPager");
+    document.getElementById("statLogged").textContent = visitRows.length;
+    if(!visitRows.length){
+      body.innerHTML = '<tr><td colspan="12" class="empty">No visits logged yet.</td></tr>';
+      pager.innerHTML = "";
+      return;
+    }
+    const totalPages = Math.max(1, Math.ceil(visitRows.length / VISITS_PAGE_SIZE));
+    if(visitsPage > totalPages) visitsPage = totalPages;
+    if(visitsPage < 1) visitsPage = 1;
+    const start = (visitsPage - 1) * VISITS_PAGE_SIZE;
+    const pageRows = visitRows.slice(start, start + VISITS_PAGE_SIZE);
+    body.innerHTML = pageRows.map(function(r){
+      const loc = [r.city, r.region, r.country].filter(Boolean).join(", ") || '<span class="muted">–</span>';
+      const dev = r.device ? (devPill(r.device.type) + ' <span class="mono">' + esc(r.device.viewport || "?") + '</span>' + (r.device.pwa ? ' <span class="tag">PWA</span>' : "")) : '<span class="muted">–</span>';
+      const ret = r.visit ? (r.visit.isReturning ? '<span class="tag">Returning ×' + esc(r.visit.visitCount) + "</span>" : '<span class="tag new">New</span>') : '<span class="muted">–</span>';
+      const dur = (typeof r.durationSec === "number") ? Math.round(r.durationSec / 6) / 10 + " min" : '<span class="muted">–</span>';
+      const load = (r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : '<span class="muted">–</span>';
+      return "<tr>" +
+        "<td>" + esc(fmtTime(r.ts)) + "</td>" +
+        "<td>" + loc + (r.ip ? '<br><span class="muted mono">' + esc(r.ip) + "</span>" : "") + "</td>" +
+        "<td class=\"muted\">" + esc(r.isp || "–") + "</td>" +
+        "<td>" + dev + "</td>" +
+        "<td>" + ret + "</td>" +
+        "<td>" + dur + "</td>" +
+        "<td>" + tagList(r.tabsVisited) + "</td>" +
+        "<td>" + (r.searchUsed ? '<span class="tag">Yes</span>' : '<span class="muted">No</span>') + "</td>" +
+        "<td>" + tagList(r.subjectFilters) + "</td>" +
+        "<td>" + tagList(r.recordingsOpened) + "</td>" +
+        "<td>" + tagList(r.notesOpened) + "</td>" +
+        "<td class=\"muted\">" + load + "</td>" +
+      "</tr>";
+    }).join("");
+    pager.innerHTML = paginationHTML(visitsPage, totalPages);
+    [].forEach.call(pager.querySelectorAll(".pageBtn:not([disabled])"), function(btn){
+      btn.addEventListener("click", function(){ goToVisitsPage(parseInt(btn.dataset.page, 10)); });
+    });
+  }
+
   function loadVisits(){
     return db.ref("visitorLog").limitToLast(visitsQueryLimit).once("value").then(function(snap){
       const rows = [];
       snap.forEach(function(child){ rows.unshift(child.val()); });
-      document.getElementById("statLogged").textContent = rows.length;
-      document.getElementById("loadMoreBtn").hidden = rows.length < visitsQueryLimit;
-      const body = document.getElementById("visitsBody");
-      if(!rows.length){
-        body.innerHTML = '<tr><td colspan="12" class="empty">No visits logged yet.</td></tr>';
-        return;
-      }
-      body.innerHTML = rows.map(function(r){
-        const loc = [r.city, r.region, r.country].filter(Boolean).join(", ") || '<span class="muted">–</span>';
-        const dev = r.device ? (devPill(r.device.type) + ' <span class="mono">' + esc(r.device.viewport || "?") + '</span>' + (r.device.pwa ? ' <span class="tag">PWA</span>' : "")) : '<span class="muted">–</span>';
-        const ret = r.visit ? (r.visit.isReturning ? '<span class="tag">Returning ×' + esc(r.visit.visitCount) + "</span>" : '<span class="tag new">New</span>') : '<span class="muted">–</span>';
-        const dur = (typeof r.durationSec === "number") ? Math.round(r.durationSec / 6) / 10 + " min" : '<span class="muted">–</span>';
-        const load = (r.performance && r.performance.loadMs) ? (Math.round(r.performance.loadMs) + " ms") : '<span class="muted">–</span>';
-        return "<tr>" +
-          "<td>" + esc(fmtTime(r.ts)) + "</td>" +
-          "<td>" + loc + (r.ip ? '<br><span class="muted mono">' + esc(r.ip) + "</span>" : "") + "</td>" +
-          "<td class=\"muted\">" + esc(r.isp || "–") + "</td>" +
-          "<td>" + dev + "</td>" +
-          "<td>" + ret + "</td>" +
-          "<td>" + dur + "</td>" +
-          "<td>" + tagList(r.tabsVisited) + "</td>" +
-          "<td>" + (r.searchUsed ? '<span class="tag">Yes</span>' : '<span class="muted">No</span>') + "</td>" +
-          "<td>" + tagList(r.subjectFilters) + "</td>" +
-          "<td>" + tagList(r.recordingsOpened) + "</td>" +
-          "<td>" + tagList(r.notesOpened) + "</td>" +
-          "<td class=\"muted\">" + load + "</td>" +
-        "</tr>";
-      }).join("");
+      visitRows = rows;
+      renderVisitsPage();
     }).catch(function(err){
       document.getElementById("visitsBody").innerHTML = '<tr><td colspan="12" class="empty">Failed to load: ' + esc(err.message) + '</td></tr>';
     });
   }
+
+  function goToVisitsPage(p){
+    const loadedPages = Math.ceil(visitRows.length / VISITS_PAGE_SIZE);
+    const moreMightExist = visitRows.length === visitsQueryLimit;
+    if(p > loadedPages && moreMightExist){
+      visitsQueryLimit += 100;
+      loadVisits().then(function(){ goToVisitsPage(p); });
+      return;
+    }
+    visitsPage = p;
+    renderVisitsPage();
+  }
+
   loadVisits();
-  document.getElementById("loadMoreBtn").addEventListener("click", function(){
-    visitsQueryLimit += 100;
-    loadVisits();
-  });
-  refreshVisitsFn = loadVisits;
+  refreshVisitsFn = function(){
+    return loadVisits();
+  };
 }
 </script>
 </body>
